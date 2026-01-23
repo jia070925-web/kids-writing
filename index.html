@@ -73,14 +73,12 @@
 
         /* --- 區域 1：筆順分解區 (右側) --- */
         #stroke-area {
-            /* 讓高度充滿整個頁面，這樣筆畫少時就不會被迫換行 */
             height: 100%; 
             display: flex;
             flex-direction: column; 
             flex-wrap: wrap;       
             direction: rtl; 
             align-content: flex-start;
-            /* 寬度不寫死，讓它根據內容(1排或2排)自動撐開 */
         }
 
         /* --- 區域 2：練習格區 (左側) --- */
@@ -205,28 +203,23 @@
                 const totalStrokes = charData.strokes.length;
 
                 // 1. 計算筆順格大小
-                // 邏輯：還是要確保「蘇」這種筆劃多的字可以塞進兩排，所以我們算一下如果硬塞兩排需要多小
                 const itemsPerCol = Math.ceil(totalStrokes / 2);
                 const pageContentHeight = document.querySelector('.page').clientHeight - (30 * 3.78);
                 
                 // 算出「剛好能塞滿2排」的大小
                 let autoSize = Math.floor(pageContentHeight / itemsPerCol) - 4;
                 
-                // 【關鍵修改】：
-                // 如果算出來的大小比使用者選的練習格還大 (例如「子」)，就用使用者選的大小 (保持一致)。
-                // 如果算出來比使用者選的小 (例如「蘇」)，就用算出來的小尺寸 (確保能塞進兩排)。
-                let finalStrokeSize = Math.min(autoSize, userPracticeSize);
+                // 【關鍵修改】：加入 135 的上限限制
+                // 筆順格大小 = 最小值(自動計算值, 練習格大小, 135)
+                // 這樣不管練習格多大，筆順格最大就是 135
+                let finalStrokeSize = Math.min(autoSize, userPracticeSize, 135);
                 
-                // 最小保護，不要小到看不見
+                // 最小保護
                 if (finalStrokeSize < 40) finalStrokeSize = 40;
 
-                // 設定 gap
                 const GAP = 2;
                 strokeArea.style.gap = GAP + 'px';
-                
-                // 【關鍵修改】：移除強制高度設定！
-                // 讓容器使用剩餘空間，這樣 Flexbox 只會在第一排滿了之後才換行
-                strokeArea.style.height = '100%'; // 使用全高
+                strokeArea.style.height = '100%'; 
 
                 // 生成筆順分解
                 charData.strokes.forEach((stroke, index) => {
@@ -249,7 +242,6 @@
                 });
 
                 // 2. 計算練習格區
-                // 稍微延遲，等 strokeArea 排列好（決定是1排還是2排）後，再計算剩下多少寬度
                 setTimeout(() => {
                     const remainingWidth = practiceArea.clientWidth;
                     const fullHeight = document.querySelector('.page').clientHeight - (30 * 3.78);
