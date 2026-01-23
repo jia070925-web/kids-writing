@@ -23,7 +23,7 @@
         
         input[type="text"] { padding: 8px; font-size: 1.5rem; width: 80px; text-align: center; border: 2px solid #4CAF50; border-radius: 5px;}
         
-        /* 滑桿樣式優化 */
+        /* 滑桿樣式 */
         input[type="range"] {
             -webkit-appearance: none;
             width: 250px;
@@ -66,19 +66,21 @@
             padding: 15mm; 
             box-sizing: border-box;
             display: flex;
-            flex-direction: row-reverse; 
+            flex-direction: row-reverse; /* 右邊是筆順區，左邊是練習區 */
             gap: 5mm;
             overflow: hidden;
         }
 
         /* --- 區域 1：筆順分解區 (右側) --- */
         #stroke-area {
-            height: 100%;
+            /* 讓高度充滿整個頁面，這樣筆畫少時就不會被迫換行 */
+            height: 100%; 
             display: flex;
             flex-direction: column; 
             flex-wrap: wrap;       
             direction: rtl; 
-            align-content: flex-start; 
+            align-content: flex-start;
+            /* 寬度不寫死，讓它根據內容(1排或2排)自動撐開 */
         }
 
         /* --- 區域 2：練習格區 (左側) --- */
@@ -102,7 +104,7 @@
             direction: ltr; 
         }
 
-        /* --- 米字格背景 (螢幕顯示用) --- */
+        /* --- 米字格背景 --- */
         .grid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
         .grid-bg::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; border-top: 1px dashed #ccc; }
         .grid-bg::after { content: ''; position: absolute; left: 50%; top: 0; width: 1px; height: 100%; border-left: 1px dashed #ccc; }
@@ -132,7 +134,6 @@
             #stroke-area, #practice-area { height: 100% !important; flex-shrink: 0; }
             svg { display: block; overflow: visible; }
 
-            /* 斜線 X 顏色修正 (實體線) */
             .grid-bg-diagonal { background: none !important; }
             .grid-bg-diagonal::before, .grid-bg-diagonal::after {
                 content: ''; position: absolute; top: 50%; left: 50%; width: 142%; height: 1px;
@@ -151,17 +152,15 @@
     <div class="controls">
         <h2>直式生字練習簿</h2>
         <div class="control-group">
-            <label>生字：<input type="text" id="charInput" value="蘇" maxlength="1"></label>
+            <label>生字：<input type="text" id="charInput" value="子" maxlength="1"></label>
             <button onclick="startGenerate()">重新生成</button>
             <button class="print-btn" onclick="window.print()">列印 (A4)</button>
         </div>
         
         <div class="control-group" style="border-top: 1px solid #eee; padding-top:20px;">
             <label>格子大小：</label>
-            
             <input type="range" id="sizeSlider" min="0" max="3" value="2" step="1" oninput="updateSizeDisplay()">
-            
-            <span id="sizeLabel" style="font-weight:bold; color:#d32f2f; font-size: 1.2rem; margin-left: 10px; width: 150px; text-align: left;">小 (120 px)</span>
+            <span id="sizeLabel" style="font-weight:bold; color:#d32f2f; font-size: 1.2rem; margin-left: 10px; width: 150px; text-align: left;"></span>
         </div>
     </div>
 
@@ -171,7 +170,6 @@
     </div>
 
     <script>
-        // 定義四個尺寸的設定
         const SIZE_SETTINGS = [
             { label: '小', size: 120 },
             { label: '中', size: 135 },
@@ -180,24 +178,18 @@
         ];
 
         window.onload = () => {
-            updateSizeDisplay(); // 初始化顯示
+            updateSizeDisplay(); 
         };
 
-        // 當滑動時觸發，更新文字並生成
         function updateSizeDisplay() {
             const index = document.getElementById('sizeSlider').value;
             const setting = SIZE_SETTINGS[index];
-            
-            // 更新文字顯示
             document.getElementById('sizeLabel').textContent = `${setting.label} (${setting.size} px)`;
-            
-            // 執行生成
             startGenerate();
         }
 
         async function startGenerate() {
             const inputChar = document.getElementById('charInput').value.trim();
-            // 根據滑桿的位置 (0~3)，去陣列裡拿真正的像素大小
             const sliderIndex = document.getElementById('sizeSlider').value;
             const userPracticeSize = SIZE_SETTINGS[sliderIndex].size;
             
@@ -212,22 +204,33 @@
                 const charData = await HanziWriter.loadCharacterData(inputChar);
                 const totalStrokes = charData.strokes.length;
 
-                // 計算筆順區
+                // 1. 計算筆順格大小
+                // 邏輯：還是要確保「蘇」這種筆劃多的字可以塞進兩排，所以我們算一下如果硬塞兩排需要多小
                 const itemsPerCol = Math.ceil(totalStrokes / 2);
                 const pageContentHeight = document.querySelector('.page').clientHeight - (30 * 3.78);
-                let strokeGridSize = Math.floor(pageContentHeight / itemsPerCol) - 4;
                 
-                // 限制筆順格最大寬度
-                if (strokeGridSize > 100) strokeGridSize = 100;
-                if (strokeGridSize < 40) strokeGridSize = 40;
+                // 算出「剛好能塞滿2排」的大小
+                let autoSize = Math.floor(pageContentHeight / itemsPerCol) - 4;
+                
+                // 【關鍵修改】：
+                // 如果算出來的大小比使用者選的練習格還大 (例如「子」)，就用使用者選的大小 (保持一致)。
+                // 如果算出來比使用者選的小 (例如「蘇」)，就用算出來的小尺寸 (確保能塞進兩排)。
+                let finalStrokeSize = Math.min(autoSize, userPracticeSize);
+                
+                // 最小保護，不要小到看不見
+                if (finalStrokeSize < 40) finalStrokeSize = 40;
 
-                strokeArea.style.width = (strokeGridSize * 2 + 10) + 'px'; 
+                // 設定 gap
                 const GAP = 2;
-                strokeArea.style.height = (itemsPerCol * (strokeGridSize + GAP)) + 'px'; 
                 strokeArea.style.gap = GAP + 'px';
+                
+                // 【關鍵修改】：移除強制高度設定！
+                // 讓容器使用剩餘空間，這樣 Flexbox 只會在第一排滿了之後才換行
+                strokeArea.style.height = '100%'; // 使用全高
 
+                // 生成筆順分解
                 charData.strokes.forEach((stroke, index) => {
-                    const div = createGridBox(strokeGridSize);
+                    const div = createGridBox(finalStrokeSize);
                     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                     svg.classList.add('raw-svg');
                     svg.setAttribute('viewBox', '0 0 1024 1024');
@@ -245,7 +248,8 @@
                     strokeArea.appendChild(div);
                 });
 
-                // 計算練習格區 (稍微延遲確保 DOM 更新)
+                // 2. 計算練習格區
+                // 稍微延遲，等 strokeArea 排列好（決定是1排還是2排）後，再計算剩下多少寬度
                 setTimeout(() => {
                     const remainingWidth = practiceArea.clientWidth;
                     const fullHeight = document.querySelector('.page').clientHeight - (30 * 3.78);
@@ -267,11 +271,10 @@
                             showOutline: false
                         });
                     }
-                }, 50); // 時間縮短一點讓反應更靈敏
+                }, 50);
 
             } catch (err) {
                 console.error(err);
-                // 靜默失敗或顯示錯誤
             }
         }
 
