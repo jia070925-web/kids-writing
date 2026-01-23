@@ -9,7 +9,7 @@
         body { 
             font-family: "標楷體", "KaiTi", serif; 
             margin: 0; padding: 20px; 
-            background-color: #555; /* 背景改深色，凸顯 A4 紙張 */
+            background-color: #555; 
             display: flex; flex-direction: column; align-items: center;
         }
 
@@ -19,11 +19,36 @@
             margin-bottom: 20px; text-align: center; width: 100%; max-width: 800px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .control-group { margin: 10px 0; display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .control-group { margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap; }
         
         input[type="text"] { padding: 8px; font-size: 1.5rem; width: 80px; text-align: center; border: 2px solid #4CAF50; border-radius: 5px;}
-        input[type="range"] { vertical-align: middle; width: 200px; cursor: pointer; }
         
+        /* 滑桿樣式優化 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 250px;
+            height: 10px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            transition: .2s;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+
         button { 
             padding: 10px 25px; font-size: 1.1rem; cursor: pointer; 
             background-color: #4CAF50; color: white; border: none; border-radius: 4px;
@@ -36,125 +61,88 @@
         /* --- A4 紙張模擬 --- */
         .page {
             width: 210mm; 
-            height: 296mm; /* 標準 A4 高度 */
+            height: 296mm; 
             background: white;
-            padding: 15mm; /* 邊距 */
+            padding: 15mm; 
             box-sizing: border-box;
-            
-            /* 關鍵佈局：讓整個版面分為左右兩區 */
             display: flex;
-            flex-direction: row-reverse; /* 右邊是筆順區，左邊是練習區 */
+            flex-direction: row-reverse; 
             gap: 5mm;
             overflow: hidden;
         }
 
         /* --- 區域 1：筆順分解區 (右側) --- */
         #stroke-area {
-            /* 這裡由 JS 動態計算寬度 */
             height: 100%;
-            
-            /* 【關鍵修正】讓格子呈現直書排列：從右上開始，往下排，排滿往左換行 */
             display: flex;
             flex-direction: column; 
             flex-wrap: wrap;       
-            direction: rtl; /* 這是讓 Columns 由右向左堆疊的關鍵！ */
-            
-            align-content: flex-start; /* 內容靠右對齊 (因為 rtl) */
+            direction: rtl; 
+            align-content: flex-start; 
         }
 
         /* --- 區域 2：練習格區 (左側) --- */
         #practice-area {
-            flex-grow: 1; /* 佔滿剩餘空間 */
+            flex-grow: 1; 
             height: 100%;
-            
-            /* 練習格也是由上往下，滿了往左換行 */
             display: flex;
             flex-direction: column;
             flex-wrap: wrap;
-            align-content: flex-start; /* 靠右對齊 (向筆順區靠攏) */
-            direction: rtl; /* 統一方向習慣 */
-            
-            gap: 2px; /* 格子稍微緊密一點 */
+            align-content: flex-start;
+            direction: rtl; 
+            gap: 2px; 
         }
 
         /* --- 格子通用樣式 --- */
         .grid-box {
-            border: 1px solid #000;
+            border: 1px solid #000; 
             position: relative;
             background-color: white;
             box-sizing: border-box;
-            /* 強制讓內容物(SVG)不被 rtl 影響方向，保持正向 */
             direction: ltr; 
         }
 
-        /* 米字格背景 */
+        /* --- 米字格背景 (螢幕顯示用) --- */
         .grid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
         .grid-bg::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; border-top: 1px dashed #ccc; }
         .grid-bg::after { content: ''; position: absolute; left: 50%; top: 0; width: 1px; height: 100%; border-left: 1px dashed #ccc; }
+        
         .grid-bg-diagonal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
             background: linear-gradient(to top right, transparent calc(50% - 0.5px), #eee calc(50% - 0.5px), #eee calc(50% + 0.5px), transparent calc(50% + 0.5px)),
                         linear-gradient(to bottom right, transparent calc(50% - 0.5px), #eee calc(50% - 0.5px), #eee calc(50% + 0.5px), transparent calc(50% + 0.5px));
         }
 
-        /* SVG 調整 */
         svg.raw-svg { width: 100%; height: 100%; padding: 3px; box-sizing: border-box; }
 
-/* --- 列印專用 (強力修正版) --- */
+        /* ========================================= */
+        /* --- 列印專用設定 --- */
+        /* ========================================= */
         @media print {
-            /* 1. 設定紙張為 A4，並移除預設邊距 */
-            @page {
-                size: A4 portrait; /* 直向 A4 */
-                margin: 0;         /* 移除瀏覽器預設頁首頁尾 */
-            }
+            @page { size: A4 portrait; margin: 0; }
+            html, body { width: 210mm; height: 297mm; margin: 0; padding: 0; background: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .controls { display: none; }
 
-            html, body {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                padding: 0;
-                background: none;
-                /* 強制列印顏色 (Chrome/Edge/Safari) */
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .controls { display: none; } /* 隱藏控制面板 */
-
-            /* 2. 針對 .page 進行強制排版鎖定 */
             .page {
-                width: 210mm !important;
-                height: 296mm !important; /* 留 1mm 緩衝防止溢出 */
-                margin: 0 !important;
-                padding: 10mm !important; /* 保持內距 */
-                box-shadow: none;
-                border: none;
-                
-                /* 關鍵修復：強制 Flex 不換行，保持左右排列 */
-                display: flex !important;
-                flex-direction: row-reverse !important; /* 維持右至左 */
-                flex-wrap: nowrap !important; /* 【絕對禁止換行】 */
-                align-items: flex-start;
-                
-                overflow: hidden; /* 超出範圍直接切掉，避免變形 */
+                width: 210mm !important; height: 296mm !important; margin: 0 !important; padding: 10mm !important;
+                box-shadow: none; border: none;
+                display: flex !important; flex-direction: row-reverse !important; flex-wrap: nowrap !important;
+                align-items: flex-start; overflow: hidden;
             }
+            #stroke-area, #practice-area { height: 100% !important; flex-shrink: 0; }
+            svg { display: block; overflow: visible; }
 
-            /* 3. 確保左右兩區的高度正確 */
-            #stroke-area, #practice-area {
-                height: 100% !important;
-                /* 確保不會因為列印縮放而被擠壓 */
-                flex-shrink: 0; 
+            /* 斜線 X 顏色修正 (實體線) */
+            .grid-bg-diagonal { background: none !important; }
+            .grid-bg-diagonal::before, .grid-bg-diagonal::after {
+                content: ''; position: absolute; top: 50%; left: 50%; width: 142%; height: 1px;
+                background-color: #ccc !important; z-index: -1;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
             }
-            
-            /* 4. 強制顯示背景線條與 SVG */
-            .grid-bg, .grid-bg-diagonal {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            svg {
-                display: block;
-                overflow: visible;
-            }
+            .grid-bg-diagonal::before { transform: translate(-50%, -50%) rotate(45deg); }
+            .grid-bg-diagonal::after { transform: translate(-50%, -50%) rotate(-45deg); }
+            .grid-bg::before { border-top-color: #ccc !important; }
+            .grid-bg::after { border-left-color: #ccc !important; }
         }
     </style>
 </head>
@@ -164,12 +152,16 @@
         <h2>直式生字練習簿</h2>
         <div class="control-group">
             <label>生字：<input type="text" id="charInput" value="蘇" maxlength="1"></label>
-            <button onclick="startGenerate()">生成</button>
+            <button onclick="startGenerate()">重新生成</button>
             <button class="print-btn" onclick="window.print()">列印 (A4)</button>
         </div>
-        <div class="control-group" style="border-top: 1px solid #eee; padding-top:10px;">
-            <label>練習格大小：<span id="sizeValue" style="font-weight:bold; color:#d32f2f;">120</span> px</label>
-            <input type="range" id="gridSizeInput" min="80" max="180" value="120" step="5" oninput="updateSizeLabel(this.value)">
+        
+        <div class="control-group" style="border-top: 1px solid #eee; padding-top:20px;">
+            <label>格子大小：</label>
+            
+            <input type="range" id="sizeSlider" min="0" max="3" value="2" step="1" oninput="updateSizeDisplay()">
+            
+            <span id="sizeLabel" style="font-weight:bold; color:#d32f2f; font-size: 1.2rem; margin-left: 10px; width: 150px; text-align: left;">小 (120 px)</span>
         </div>
     </div>
 
@@ -179,15 +171,35 @@
     </div>
 
     <script>
-        window.onload = () => startGenerate();
+        // 定義四個尺寸的設定
+        const SIZE_SETTINGS = [
+            { label: '小', size: 120 },
+            { label: '中', size: 135 },
+            { label: '大', size: 160 },
+            { label: '特大', size: 190 }
+        ];
 
-        function updateSizeLabel(val) {
-            document.getElementById('sizeValue').textContent = val;
+        window.onload = () => {
+            updateSizeDisplay(); // 初始化顯示
+        };
+
+        // 當滑動時觸發，更新文字並生成
+        function updateSizeDisplay() {
+            const index = document.getElementById('sizeSlider').value;
+            const setting = SIZE_SETTINGS[index];
+            
+            // 更新文字顯示
+            document.getElementById('sizeLabel').textContent = `${setting.label} (${setting.size} px)`;
+            
+            // 執行生成
+            startGenerate();
         }
 
         async function startGenerate() {
             const inputChar = document.getElementById('charInput').value.trim();
-            const userPracticeSize = parseInt(document.getElementById('gridSizeInput').value); 
+            // 根據滑桿的位置 (0~3)，去陣列裡拿真正的像素大小
+            const sliderIndex = document.getElementById('sizeSlider').value;
+            const userPracticeSize = SIZE_SETTINGS[sliderIndex].size;
             
             if (!inputChar) return;
 
@@ -197,43 +209,34 @@
             practiceArea.innerHTML = '';
 
             try {
-                // 1. 取得筆劃數據
                 const charData = await HanziWriter.loadCharacterData(inputChar);
                 const totalStrokes = charData.strokes.length;
 
-                // 2. 計算筆順區 (固定 2 行)
-                const itemsPerCol = Math.ceil(totalStrokes / 2); // 一行要放幾個
+                // 計算筆順區
+                const itemsPerCol = Math.ceil(totalStrokes / 2);
+                const pageContentHeight = document.querySelector('.page').clientHeight - (30 * 3.78);
+                let strokeGridSize = Math.floor(pageContentHeight / itemsPerCol) - 4;
                 
-                // 取得頁面內容的可用高度
-                const pageContentHeight = document.querySelector('.page').clientHeight - (30 * 3.78); // 減去 padding 緩衝
-                
-                // 計算筆順格最佳高度
-                let strokeGridSize = Math.floor(pageContentHeight / itemsPerCol) - 4; // -4 for gap/border
-                
-                // 限制大小 (太大很怪，太小看不到)
+                // 限制筆順格最大寬度
                 if (strokeGridSize > 100) strokeGridSize = 100;
                 if (strokeGridSize < 40) strokeGridSize = 40;
 
-                // 設定筆順區寬度：大小 * 2行 (加上間距緩衝)
                 strokeArea.style.width = (strokeGridSize * 2 + 10) + 'px'; 
-                // 設定 gap
-                strokeArea.style.gap = '2px';
+                const GAP = 2;
+                strokeArea.style.height = (itemsPerCol * (strokeGridSize + GAP)) + 'px'; 
+                strokeArea.style.gap = GAP + 'px';
 
-                // 生成筆順分解 (紅/灰)
                 charData.strokes.forEach((stroke, index) => {
                     const div = createGridBox(strokeGridSize);
-                    
                     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                     svg.classList.add('raw-svg');
                     svg.setAttribute('viewBox', '0 0 1024 1024');
-                    
                     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
                     g.setAttribute('transform', 'scale(1, -1) translate(0, -900)');
 
                     for (let k = 0; k <= index; k++) {
                         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('d', charData.strokes[k]);
-                        // 紅色只有當前這一筆，其他灰色
                         path.setAttribute('fill', k === index ? '#FF0000' : '#BBBBBB'); 
                         g.appendChild(path);
                     }
@@ -242,17 +245,13 @@
                     strokeArea.appendChild(div);
                 });
 
-
-                // 3. 計算練習格區 (自動填滿)
+                // 計算練習格區 (稍微延遲確保 DOM 更新)
                 setTimeout(() => {
                     const remainingWidth = practiceArea.clientWidth;
-                    const remainingHeight = practiceArea.clientHeight;
+                    const fullHeight = document.querySelector('.page').clientHeight - (30 * 3.78);
 
-                    // 因為我們現在是 direction: rtl + flex column
-                    // 所以 Rows 是直的 (Height / Size)，Cols 是橫的 (Width / Size)
-                    const boxesPerColumn = Math.floor(remainingHeight / (userPracticeSize + 4)); 
+                    const boxesPerColumn = Math.floor(fullHeight / (userPracticeSize + 4)); 
                     const numberOfColumns = Math.floor(remainingWidth / (userPracticeSize + 4));
-
                     const totalPracticeBoxes = boxesPerColumn * numberOfColumns;
 
                     for (let i = 0; i < totalPracticeBoxes; i++) {
@@ -264,15 +263,15 @@
                             width: userPracticeSize,
                             height: userPracticeSize,
                             padding: 5,
-                            strokeColor: '#DDDDDD', // 淺灰
+                            strokeColor: '#DDDDDD', 
                             showOutline: false
                         });
                     }
-                }, 100);
+                }, 50); // 時間縮短一點讓反應更靈敏
 
             } catch (err) {
                 console.error(err);
-                alert("找不到這個字，請確認輸入正確。");
+                // 靜默失敗或顯示錯誤
             }
         }
 
