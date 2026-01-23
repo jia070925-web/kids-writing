@@ -205,16 +205,9 @@
                 // 1. 計算筆順格大小
                 const itemsPerCol = Math.ceil(totalStrokes / 2);
                 const pageContentHeight = document.querySelector('.page').clientHeight - (30 * 3.78);
-                
-                // 算出「剛好能塞滿2排」的大小
                 let autoSize = Math.floor(pageContentHeight / itemsPerCol) - 4;
-                
-                // 【關鍵修改】：加入 135 的上限限制
-                // 筆順格大小 = 最小值(自動計算值, 練習格大小, 135)
-                // 這樣不管練習格多大，筆順格最大就是 135
                 let finalStrokeSize = Math.min(autoSize, userPracticeSize, 135);
                 
-                // 最小保護
                 if (finalStrokeSize < 40) finalStrokeSize = 40;
 
                 const GAP = 2;
@@ -233,7 +226,12 @@
                     for (let k = 0; k <= index; k++) {
                         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('d', charData.strokes[k]);
-                        path.setAttribute('fill', k === index ? '#FF0000' : '#BBBBBB'); 
+                        
+                        // 【關鍵修改】：
+                        // k === index (當前筆畫) -> 紅色 (#FF0000)
+                        // 其他 (過去筆畫) -> 黑色 (#000000)
+                        path.setAttribute('fill', k === index ? '#FF0000' : '#000000'); 
+                        
                         g.appendChild(path);
                     }
                     svg.appendChild(g);
@@ -259,7 +257,7 @@
                             width: userPracticeSize,
                             height: userPracticeSize,
                             padding: 5,
-                            strokeColor: '#DDDDDD', 
+                            strokeColor: '#DDDDDD', // 練習格維持淺灰色，方便描寫
                             showOutline: false
                         });
                     }
