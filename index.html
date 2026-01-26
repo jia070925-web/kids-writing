@@ -23,6 +23,17 @@
         
         input[type="text"] { padding: 8px; font-size: 1.5rem; width: 80px; text-align: center; border: 2px solid #4CAF50; border-radius: 5px;}
         
+        /* 下拉選單樣式 */
+        select {
+            padding: 8px 15px;
+            font-size: 1.1rem;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
         /* 滑桿樣式 */
         input[type="range"] {
             -webkit-appearance: none;
@@ -156,7 +167,14 @@
         </div>
         
         <div class="control-group" style="border-top: 1px solid #eee; padding-top:20px;">
-            <label>格子大小：</label>
+            <label>練習模式：</label>
+            <select id="practiceMode" onchange="startGenerate()">
+                <option value="all" selected>全描寫</option>
+                <option value="half">半描寫半空白</option>
+                <option value="empty">全空白</option>
+            </select>
+
+            <label style="margin-left: 20px;">格子大小：</label>
             <input type="range" id="sizeSlider" min="0" max="3" value="2" step="1" oninput="updateSizeDisplay()">
             <span id="sizeLabel" style="font-weight:bold; color:#d32f2f; font-size: 1.2rem; margin-left: 10px; width: 150px; text-align: left;"></span>
         </div>
@@ -190,6 +208,8 @@
             const inputChar = document.getElementById('charInput').value.trim();
             const sliderIndex = document.getElementById('sizeSlider').value;
             const userPracticeSize = SIZE_SETTINGS[sliderIndex].size;
+            // 取得目前的練習模式
+            const practiceMode = document.getElementById('practiceMode').value;
             
             if (!inputChar) return;
 
@@ -227,9 +247,7 @@
                         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         path.setAttribute('d', charData.strokes[k]);
                         
-                        // 【關鍵修改】：
-                        // k === index (當前筆畫) -> 紅色 (#FF0000)
-                        // 其他 (過去筆畫) -> 黑色 (#000000)
+                        // 當前筆畫紅，過去筆畫黑
                         path.setAttribute('fill', k === index ? '#FF0000' : '#000000'); 
                         
                         g.appendChild(path);
@@ -253,13 +271,30 @@
                         div.id = `p-${i}`;
                         practiceArea.appendChild(div);
 
-                        HanziWriter.create(div, inputChar, {
-                            width: userPracticeSize,
-                            height: userPracticeSize,
-                            padding: 5,
-                            strokeColor: '#DDDDDD', // 練習格維持淺灰色，方便描寫
-                            showOutline: false
-                        });
+                        // --- 【核心修改：判斷這一格要不要畫字】 ---
+                        let shouldRender = false;
+
+                        if (practiceMode === 'all') {
+                            // 全描寫：每一格都畫
+                            shouldRender = true;
+                        } else if (practiceMode === 'empty') {
+                            // 全空白：都不畫
+                            shouldRender = false;
+                        } else if (practiceMode === 'half') {
+                            // 半描寫：只有前一半 (右半邊) 畫
+                            // 因為是 RTL 排列，i 比較小的會在右邊
+                            shouldRender = i < (totalPracticeBoxes / 2);
+                        }
+
+                        if (shouldRender) {
+                            HanziWriter.create(div, inputChar, {
+                                width: userPracticeSize,
+                                height: userPracticeSize,
+                                padding: 5,
+                                strokeColor: '#DDDDDD', // 淺灰描寫字
+                                showOutline: false
+                            });
+                        }
                     }
                 }, 50);
 
