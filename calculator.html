@@ -3,99 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>裝備製作規劃表 (v15 完美響應版)</title>
+    <title>裝備製作規劃表 (v14 最終舒適版)</title>
     <style>
         :root { --primary: #2c3e50; --accent: #d35400; --bg: #f4f7f6; --border: #e0e0e0; }
         body { font-family: "Microsoft JhengHei", "Segoe UI", sans-serif; background-color: var(--bg); color: var(--primary); margin: 0; padding: 20px; font-size: 15px; }
         * { box-sizing: border-box; }
 
-        /* 主容器：限制最大寬度，並允許換行 */
+        /* 主佈局：設定最大寬度，避免電腦版太寬 */
         .container { 
-            max-width: 1300px; 
-            margin: 0 auto; 
+            max-width: 1200px; /* 這裡控制電腦版最大寬度 */
+            margin: 0 auto;    /* 居中顯示 */
             display: flex; 
-            flex-wrap: wrap; /* 關鍵：空間不足時自動換行 */
+            flex-wrap: wrap;   /* 允許換行 (RWD關鍵) */
             gap: 20px; 
             align-items: flex-start;
         }
         
-        /* --- 左側：表格區 --- */
+        /* 左側：表格區 (基礎寬 600px, 可縮放) */
         .table-section { 
-            /* 彈性係數：優先佔用空間，基礎寬度 600px */
-            flex: 1 1 600px; 
+            flex: 1 1 500px; 
             background: white; 
             border-radius: 6px; 
             box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
             border: 1px solid #ccc;
+            overflow: hidden;
             display: flex; 
             flex-direction: column;
-            overflow: hidden; /* 防止圓角被切掉 */
         }
 
-        .table-header { padding: 12px 15px; background: var(--primary); color: white; }
+        .table-header { padding: 10px 15px; background: var(--primary); color: white; }
         .table-header h2 { margin: 0; font-size: 1rem; font-weight: normal; }
 
-        /* 表格捲動容器：關鍵修正 */
-        .table-scroll { 
-            width: 100%; 
-            overflow-x: auto; /* 內容過寬時顯示橫向捲軸 */
-            -webkit-overflow-scrolling: touch; 
-        }
-
-        /* 表格本體 */
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            table-layout: fixed; 
-            /* 強制最小寬度，避免字體被擠扁 */
-            min-width: 600px; 
-        }
+        .table-scroll { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+        /* 表格設定：固定佈局 */
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 500px; }
         
-        /* 定義欄寬 */
+        /* 欄寬微調 */
         col.c-name { width: 24%; }
         col.c-num { width: 19%; }
 
-        th { font-size: 0.85rem; padding: 8px 4px; background: #f8f9fa; border-bottom: 2px solid #ddd; color: #555; vertical-align: middle; white-space: nowrap; }
-        td { padding: 5px; border-bottom: 1px solid #eee; text-align: center; height: 38px; }
+        th { font-size: 0.85rem; padding: 6px; background: #f8f9fa; border-bottom: 2px solid #ddd; color: #555; vertical-align: middle; }
+        td { padding: 4px; border-bottom: 1px solid #eee; text-align: center; height: 36px; }
 
-        /* 輸入框微調 */
-        input[type="number"] { width: 95%; padding: 5px 0; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 0.9rem; }
-        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(211,84,0,0.1); }
-        
-        /* 顏色與分組 */
-        .bg-inv { background-color: #e8f6f3; color: #16a085; }
-        .bg-target { background-color: #ebf5fb; color: #2980b9; }
-        input.inp-inv { background-color: #f0fdfa; color: #16a085; font-weight: bold; }
-        input.inp-target { background-color: #f4faff; color: #2980b9; font-weight: bold; }
-
-        tr.group-row { background-color: #eaeaea; cursor: pointer; font-weight: bold; color: #333; font-size: 0.9rem; }
+        /* 分組標題 */
+        tr.group-row { background-color: #eaeaea; cursor: pointer; font-weight: bold; color: #333; font-size: 0.9rem; transition: background 0.2s; }
         tr.group-row:hover { background-color: #e0e0e0; }
-        tr.group-row td { text-align: left; padding: 8px 15px; border-top: 1px solid #ccc; }
+        tr.group-row td { text-align: left; padding: 6px 15px; border-top: 1px solid #ccc; }
         
         .arrow { display: inline-block; transition: transform 0.2s; margin-right: 5px; font-size: 0.8rem; }
         .collapsed .arrow { transform: rotate(-90deg); }
         .tbody-group.hidden { display: none; }
 
+        /* 輸入框 */
+        input[type="number"] { width: 90%; padding: 4px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 0.9rem; }
+        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(211,84,0,0.1); }
+        
+        .bg-inv { background-color: #e8f6f3; color: #16a085; }
+        .bg-target { background-color: #ebf5fb; color: #2980b9; }
+        input.inp-inv { background-color: #f0fdfa; color: #16a085; font-weight: bold; }
+        input.inp-target { background-color: #f4faff; color: #2980b9; font-weight: bold; }
 
-        /* --- 右側：結果面板 --- */
+        /* 右側：結果面板 (基礎寬 350px, 可縮放) */
         .result-section { 
-            /* 基礎寬度 350px，空間不足時會換行 */
             flex: 1 1 350px; 
-            /* 限制最小寬度，防止被擠扁 */
-            min-width: 300px; 
-            
             background: white; 
             padding: 20px; 
             border-radius: 6px; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
             border-top: 4px solid var(--accent); 
-            
             position: sticky;
             top: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
-            max-height: 95vh;
+            max-height: 95vh; /* 限制高度 */
         }
         
         .res-header {
@@ -114,8 +95,16 @@
         }
         .btn-calc:hover { background: #ba4a00; transform: translateY(-1px); }
         
+        /* 清除按鈕 */
         .btn-reset { 
-            background: transparent; color: #999; border: 1px solid #ddd; font-size: 0.8rem; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s;
+            background: transparent; 
+            color: #999; 
+            border: 1px solid #ddd; 
+            font-size: 0.8rem; 
+            padding: 4px 10px; 
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
         }
         .btn-reset:hover { background: #f8f8f8; color: #c0392b; border-color: #c0392b; }
 
@@ -128,15 +117,15 @@
         .status-ok { color: #27ae60; }
         .status-bad { color: #c0392b; font-weight: bold; }
 
-        /* 流程日誌 */
+        /* 流程日誌區塊 */
         .log-box {
-            flex-grow: 1; 
+            flex-grow: 1; /* 填滿剩餘高度 */
             border: 1px solid #eee;
             background: #fafafa;
             border-radius: 4px;
             padding: 15px;
-            overflow-y: auto;
-            min-height: 250px; /* 確保有最小高度 */
+            overflow-y: auto; /* 內部捲動 */
+            min-height: 300px;
         }
         .log-list { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; }
         .log-list li { margin-bottom: 15px; border-left: 3px solid #ddd; padding-left: 12px; line-height: 1.6; }
@@ -146,18 +135,16 @@
         .step-header { font-weight: bold; color: #333; margin-bottom: 4px; display: block; }
         .step-detail { color: #555; font-family: Consolas, Monaco, monospace; font-size: 0.85rem; background: #fff; padding: 6px 10px; border: 1px solid #eee; border-radius: 3px; display: block; margin-top: 4px; }
 
-        /* --- 響應式斷點 --- */
-        /* 當螢幕寬度小於 950px 時，切換為單欄模式 */
-        @media (max-width: 950px) {
+        /* 手機版適配：寬度小於 900px 時切換為單欄 */
+        @media (max-width: 900px) {
             .result-section { 
                 position: static; 
                 width: 100%; 
                 max-height: none; 
-                flex: none; /* 讓它佔滿一行 */
-            }
-            .table-section {
                 flex: none;
-                width: 100%;
+            }
+            .log-box {
+                max-height: 500px; /* 手機版給定固定最大高度 */
             }
         }
     </style>
@@ -311,6 +298,7 @@
     };
 
     function resetAll() {
+        // 直接清除，無須確認
         document.querySelectorAll('input').forEach(i => i.value = '');
         calculate();
     }
@@ -441,10 +429,7 @@
 
         html += `<tr style="background:#fff8e1;">
             <td>橘色盒子</td>
-            <td>
-                ${boxPeak.toLocaleString()}<br>
-                <span class="sub-text">(開${openPeak.toLocaleString()}組)</span>
-            </td>
+            <td>${boxPeak.toLocaleString()}</td>
             <td>${boxInv.toLocaleString()}</td>
             <td class="${netBoxes>0?'status-bad':'status-ok'}">
                 ${netBoxes>0 ? '缺'+netBoxes.toLocaleString() : '充足'}<br>
