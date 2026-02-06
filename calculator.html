@@ -2,13 +2,14 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>裝備製作規劃表 (手機優化版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寵裝規劃</title>
     <style>
         :root { --primary: #2c3e50; --accent: #d35400; --bg: #f4f7f6; --border: #e0e0e0; }
         body { font-family: "Microsoft JhengHei", "Segoe UI", sans-serif; background-color: var(--bg); color: var(--primary); margin: 0; padding: 20px; font-size: 15px; }
         * { box-sizing: border-box; }
 
+        /* 主佈局 */
         .container { 
             max-width: 1200px; 
             margin: 0 auto;    
@@ -18,7 +19,7 @@
             align-items: flex-start;
         }
         
-        /* --- 表格區塊優化 --- */
+        /* 左側：表格區 */
         .table-section { 
             flex: 1 1 500px; 
             background: white; 
@@ -33,108 +34,145 @@
         .table-header { padding: 10px 15px; background: var(--primary); color: white; }
         .table-header h2 { margin: 0; font-size: 1rem; font-weight: normal; }
 
-        /* 關鍵：外層容器允許滾動 */
-        .table-scroll { 
-            overflow: auto; 
-            max-height: 80vh; /* 限制高度，觸發垂直固定表頭 */
-            width: 100%; 
-            -webkit-overflow-scrolling: touch; 
-        }
-
-        table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; min-width: 550px; }
+        /* 讓表格在手機上可以橫向捲動，但保持響應式 */
+        .table-scroll { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
         
-        col.c-name { width: 110px; } /* 固定名稱欄寬度 */
-        col.c-num { width: 110px; }
-
-        /* --- Sticky 固定效果 --- */
-        thead th { 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-            background: #f8f9fa; 
-            border-bottom: 2px solid #ddd;
-        }
+        /* 表格設定 */
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 500px; }
         
-        /* 名稱欄固定在左側 */
-        td:first-child, th:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 50;
-            background-color: #fff;
-            border-right: 2px solid #eee;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-        }
+        /* 欄寬微調 */
+        col.c-name { width: 24%; }
+        col.c-num { width: 19%; }
 
-        /* 分組標題固定 */
-        tr.group-row td {
-            position: sticky;
-            left: 0;
-            background-color: #eaeaea !important;
-            z-index: 60;
-            text-align: left;
-            padding: 8px 15px;
-        }
+        th { font-size: 0.85rem; padding: 6px; background: #f8f9fa; border-bottom: 2px solid #ddd; color: #555; vertical-align: middle; }
+        td { padding: 4px; border-bottom: 1px solid #eee; text-align: center; height: 36px; }
+        
+        /* 偶數行底色，增加閱讀性 (斑馬紋) */
+        tbody tr:nth-child(even) { background-color: #fcfcfc; }
 
-        th { font-size: 0.8rem; padding: 8px 4px; color: #555; vertical-align: middle; border-bottom: 1px solid #ddd; }
-        td { padding: 4px; border-bottom: 1px solid #eee; text-align: center; height: 42px; background: #fff; }
-
-        .arrow { display: inline-block; transition: transform 0.2s; margin-right: 5px; font-size: 0.8rem; }
-        .collapsed .arrow { transform: rotate(-90deg); }
-        .tbody-group.hidden { display: none; }
-
-        /* 輸入框優化 */
-        input[type="number"] { 
-            width: 95%; 
-            padding: 8px 2px; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            text-align: center; 
-            font-size: 1rem; /* 防止 iOS 自動放大 */
-        }
-        input:focus { border-color: var(--accent); outline: none; background: #fffdfb; }
+        /* 輸入框 */
+        input[type="number"] { width: 90%; padding: 4px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 0.9rem; }
+        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(211,84,0,0.1); }
         
         .bg-inv { background-color: #e8f6f3; color: #16a085; }
         .bg-target { background-color: #ebf5fb; color: #2980b9; }
+        input.inp-inv { background-color: #f0fdfa; color: #16a085; font-weight: bold; }
+        input.inp-target { background-color: #f4faff; color: #2980b9; font-weight: bold; }
 
-        /* --- 結果面板 --- */
-        .result-section { 
-            flex: 1 1 350px; 
-            background: white; 
-            padding: 20px; 
-            border-radius: 6px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
-            border-top: 4px solid var(--accent); 
-            position: sticky;
-            top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            max-height: 95vh;
-        }
+/* 右側：結果面板 */
+.result-section { 
+    flex: 1 1 300px; 
+    background: white; 
+    padding: 15px;   
+    border-radius: 6px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+    border-top: 4px solid var(--accent); 
+    position: sticky;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 95vh;
+    min-width: 0;    
+}
         
+        .res-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 5px;
+        }
+
         .btn-calc { 
             width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 6px; 
-            font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: 0.2s;
+            font-size: 1.1rem; cursor: pointer; font-weight: bold; box-shadow: 0 3px 6px rgba(0,0,0,0.15); 
+            transition: 0.2s;
         }
-        .btn-reset { background: transparent; color: #999; border: 1px solid #ddd; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
-
-        .res-table { width: 100%; font-size: 0.9rem; border-collapse: collapse; }
-        .res-table th { text-align: left; padding: 8px; border-bottom: 2px solid #ddd; background: #fafafa; }
-        .res-table td { padding: 8px; border-bottom: 1px solid #eee; }
+        .btn-calc:hover { background: #ba4a00; transform: translateY(-1px); }
         
+        /* 清除按鈕 */
+        .btn-reset { 
+            background: transparent; 
+            color: #999; 
+            border: 1px solid #ddd; 
+            font-size: 0.8rem; 
+            padding: 4px 10px; 
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-reset:hover { background: #f8f8f8; color: #c0392b; border-color: #c0392b; }
+
+
+/* 結果表格  */
+.res-table { 
+    width: 100%; 
+    font-size: 0.85rem;  
+    border-collapse: collapse; 
+    table-layout: fixed;  
+    min-width: 0; 
+}
+.res-table th { 
+    text-align: left; 
+    padding: 6px 4px;    
+    border-bottom: 2px solid #ddd; 
+    background: #fafafa; 
+    color: #555; 
+    white-space: nowrap;  
+}
+
+.res-table td { 
+    padding: 6px 4px;   
+    border-bottom: 1px solid #eee; 
+    vertical-align: top; 
+    
+
+    word-wrap: break-word;     
+    overflow-wrap: break-word; 
+    word-break: break-all;  
+}  
+        .sub-text { font-size: 0.85rem; color: #666; margin-top: 2px; display: block; }
         .status-ok { color: #27ae60; }
         .status-bad { color: #c0392b; font-weight: bold; }
 
-        .log-box { flex-grow: 1; border: 1px solid #eee; background: #fafafa; border-radius: 4px; padding: 12px; overflow-y: auto; min-height: 250px; }
-        .log-list { list-style: none; padding: 0; margin: 0; font-size: 0.85rem; }
-        .log-list li { margin-bottom: 10px; border-left: 3px solid #ddd; padding-left: 10px; }
-
-        /* --- 手機版適配 --- */
-        @media (max-width: 900px) {
-            body { padding: 10px; }
-            .result-section { position: static; width: 100%; max-height: none; }
-            .container { gap: 10px; }
+        /* 流程日誌區塊 */
+        .log-box {
+            flex-grow: 1;
+            border: 1px solid #eee;
+            background: #fafafa;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-y: auto;
+            min-height: 300px;
         }
+        .log-list { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; }
+        .log-list li { margin-bottom: 15px; border-left: 3px solid #ddd; padding-left: 12px; line-height: 1.6; }
+        .log-list li.keep { border-left-color: #27ae60; }
+        .log-list li.temp { border-left-color: #f39c12; }
+        
+        .step-header { font-weight: bold; color: #333; margin-bottom: 4px; display: block; }
+        .step-detail { color: #555; font-family: Consolas, Monaco, monospace; font-size: 0.85rem; background: #fff; padding: 6px 10px; border: 1px solid #eee; border-radius: 3px; display: block; margin-top: 4px; }
+
+        /* 手機版適配 */
+        @media (max-width: 900px) {
+            .result-section { 
+                position: static; 
+                width: 100%; 
+                max-height: none; 
+                flex: none;
+            }
+            .log-box {
+                max-height: 500px; 
+            }
+        }
+
+        /* 設定結果表格欄位寬度比例 */
+.res-table th:nth-child(1) { width: 20%; } /* 項目 */
+.res-table th:nth-child(2) { width: 28%; } /* 峰值需求 */
+.res-table th:nth-child(3) { width: 28%; } /* 庫存 */
+.res-table th:nth-child(4) { width: 24%; } /* 狀態 (給予足夠空間顯示 "缺xxx") */
     </style>
 </head>
 <body>
@@ -142,7 +180,7 @@
 <div class="container">
     <div class="table-section">
         <div class="table-header">
-            <h2>裝備規劃輸入 (滑動表格查看更多)</h2>
+            <h2>寵備規劃</h2>
         </div>
         <div class="table-scroll">
             <table>
@@ -155,47 +193,49 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th rowspan="2" style="text-align:left; padding-left:15px;">名稱</th>
-                        <th colspan="2" class="bg-inv">庫存 (可分解)</th>
+                        <th rowspan="2" style="text-align:center; padding-left:15px;">名稱</th>
+                        <th colspan="2" class="bg-inv">目前裝備(可分解)</th>
                         <th colspan="2" class="bg-target">製作目標</th>
                     </tr>
                     <tr>
                         <th class="bg-inv">真裝</th>
                         <th class="bg-inv">仿裝</th>
-                        <th class="bg-target">保留真裝</th>
-                        <th class="bg-target">過渡仿裝</th>
+                        <th class="bg-target">真裝</th>
+                        <th class="bg-target">仿裝</th>
                     </tr>
                 </thead>
-                <tbody id="mainTable"></tbody>
+                <tbody id="tableRoot"></tbody>
             </table>
         </div>
     </div>
 
     <div class="result-section">
-        <div class="res-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0;">📊 計算結果</h3>
+        <div class="res-header">
+            <h3 style="margin:0; font-size:1.1rem;">計算結果</h3>
             <button class="btn-reset" onclick="resetAll()">🗑️ 清除</button>
         </div>
 
-        <button class="btn-calc" onclick="calculate()">⟳ 開始計算</button>
+        <button class="btn-calc" onclick="calculate()">⟳ 計算需求</button>
         
-        <div id="result_area">
+        <div>
+            <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; color:#666;">材料統計</h4>
             <table class="res-table">
                 <thead>
                     <tr>
-                        <th width="25%">項目</th>
-                        <th width="35%">需求</th>
-                        <th width="40%">狀態</th>
+                        <th width="20%" style="text-align:center">項目</th>
+                        <th width="30%" style="text-align:center">峰值需求</th>
+                        <th width="25%" style="text-align:center">庫存</th>
+                        <th width="25%" style="text-align:center">狀態</th>
                     </tr>
                 </thead>
                 <tbody id="res_tbody">
-                    <tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">尚無數據</td></tr>
+                    <tr><td colspan="4" style="text-align:center; color:#999; padding:20px;">尚無數據</td></tr>
                 </tbody>
             </table>
         </div>
 
         <div style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
-            <h4 style="margin: 10px 0 5px 0; font-size: 0.9rem;">詳細流程</h4>
+            <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; color:#666;">詳細流程</h4>
             <div class="log-box">
                 <ul id="step_summary" class="log-list"></ul>
             </div>
@@ -204,125 +244,212 @@
 </div>
 
 <script>
+    // --- 數據庫 ---
     const db = [
-        {name:"1", t:{p:10, c:2000}, i:{p:10}}, {name:"2", t:{p:40, c:7000}, i:{p:20}}, {name:"3", t:{p:110, c:18000}, i:{p:30}},
-        {name:"4", t:{p:260, c:41000}, i:{p:40}}, {name:"5", t:{p:570, c:88000}, i:{p:50}}, {name:"6", t:{p:1200, c:183000}, i:{p:60}},
-        {name:"7", t:{p:2470, c:374000}, i:{p:70}}, {name:"8", t:{p:5020, c:758000}, i:{p:80}},
-        {name:"銅1", t:{p:5620, c:778000, m:{'銅':4}}, i:{p:600}}, {name:"銅2", t:{p:6320, c:803000, m:{'銅':10}}, i:{p:700}}, {name:"銅3", t:{p:7120, c:833000, m:{'銅':18}}, i:{p:800}},
-        {name:"鐵1", t:{p:8120, c:863000, m:{'銅':18,'鐵':4}}, i:{p:1000}}, {name:"鐵2", t:{p:9220, c:898000, m:{'銅':18,'鐵':10}}, i:{p:1100}}, {name:"鐵3", t:{p:10420, c:938000, m:{'銅':18,'鐵':18}}, i:{p:1200}},
-        {name:"珊瑚1", t:{p:11820, c:978000, m:{'銅':18,'鐵':18,'珊瑚':4}}, i:{p:1400}}, {name:"珊瑚2", t:{p:13320, c:1028000, m:{'銅':18,'鐵':18,'珊瑚':10}}, i:{p:1500}}, {name:"珊瑚3", t:{p:14920, c:1188000, m:{'銅':18,'鐵':18,'珊瑚':18}}, i:{p:1600}},
-        {name:"棱晶1", t:{p:18920, c:1238000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':10}}, i:{p:4000}}, {name:"棱晶2", t:{p:23920, c:1438000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':25}}, i:{p:5000}}, {name:"棱晶3", t:{p:29920, c:1688000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45}}, i:{p:6000}},
-        {name:"機械1", t:{p:32920, c:1838000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':10}}, i:{p:6600}}, {name:"機械2", t:{p:26920, c:2038000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':25}}, i:{p:7200}}, {name:"機械3", t:{p:41920, c:2288000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':45}}, i:{p:8000}},
-        {name:"神源1", t:{p:32920, c:2588000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':45,'神源石':10}}, i:{p:6600}}, {name:"神源2", t:{p:40920, c:2638000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':45,'神源石':25}}, i:{p:7200}}, {name:"神源3", t:{p:53920, c:2888000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':45,'神源石':45}}, i:{p:8000}}
+
+        {name:"銅1", t:{p:5620, c:778000, m:{'銅':4}}, i:{p:600}},
+        {name:"銅2", t:{p:6320, c:803000, m:{'銅':10}}, i:{p:700}},
+        {name:"銅3", t:{p:7120, c:833000, m:{'銅':18}}, i:{p:800}},
+        {name:"鐵1", t:{p:8120, c:863000, m:{'銅':18,'鐵':4}}, i:{p:1000}},
+        {name:"鐵2", t:{p:9220, c:898000, m:{'銅':18,'鐵':10}}, i:{p:1100}},
+        {name:"鐵3", t:{p:10420, c:938000, m:{'銅':18,'鐵':18}}, i:{p:1200}},
+        {name:"珊瑚1", t:{p:11820, c:978000, m:{'銅':18,'鐵':18,'珊瑚':4}}, i:{p:1400}},
+        {name:"珊瑚2", t:{p:13320, c:1028000, m:{'銅':18,'鐵':18,'珊瑚':10}}, i:{p:1500}},
+        {name:"珊瑚3", t:{p:14920, c:1188000, m:{'銅':18,'鐵':18,'珊瑚':18}}, i:{p:1600}},
+        {name:"棱晶1", t:{p:18920, c:1238000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':10}}, i:{p:4000}},
+        {name:"棱晶2", t:{p:23920, c:1438000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':25}}, i:{p:5000}},
+        {name:"棱晶3", t:{p:29920, c:1688000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45}}, i:{p:6000}},
+        {name:"機械1", t:{p:32920, c:1838000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':10}}, i:{p:6600}},
+        {name:"機械2", t:{p:26920, c:2038000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':25}}, i:{p:7200}},
+        {name:"機械3", t:{p:41920, c:2288000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':45}}, i:{p:8000}},
+        {name:"神源1", t:{p:32920, c:2588000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':45,'神源石':10}}, i:{p:6600}},
+        {name:"神源2", t:{p:40920, c:2638000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':45,'神源石':25}}, i:{p:7200}},
+        {name:"神源3", t:{p:53920, c:2888000, m:{'銅':18,'鐵':18,'珊瑚':18,'棱晶':45,'振金':45,'神源石':45}}, i:{p:8000}}
     ];
 
-    const groups = [
-        { id: 'g1', title: '基礎裝備 (1-8)', start: 0, end: 7, open: false },
-        { id: 'g2', title: '銅階 (銅1-3)', start: 8, end: 10, open: false },
-        { id: 'g3', title: '鐵階 (鐵1-3)', start: 11, end: 13, open: false },
-        { id: 'g4', title: '進階 (珊瑚/棱晶/機械/神源)', start: 14, end: db.length-1, open: true }
-    ];
+    const POINTS_PER_BOX = 5;
+    const BOXES_PER_OPEN = 2; 
+    const matKeys = ['points', '貢獻', '銅', '鐵', '珊瑚', '棱晶', '振金', '神源石'];
+    
+    // 初始化：移除原本的分組邏輯，直接生成所有列
+window.onload = function() {
+        const tableRoot = document.getElementById('tableRoot');
+        tableRoot.innerHTML = ''; // 清空
 
-    window.onload = function() {
-        const table = document.querySelector('table');
-        groups.forEach(g => {
-            const hBody = document.createElement('tbody');
-            hBody.innerHTML = `<tr class="group-row ${g.open?'':'collapsed'}"><td colspan="5"><span class="arrow">▼</span> ${g.title}</td></tr>`;
-            table.appendChild(hBody);
-
-            const cBody = document.createElement('tbody');
-            cBody.className = `tbody-group ${g.open?'':'hidden'}`;
-            for(let i=g.start; i<=g.end; i++){
-                const item = db[i];
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="text-align:left; padding-left:15px; font-weight:bold;">${item.name}</td>
-                    <td><input type="number" inputmode="decimal" id="inv_true_${i}" class="inp-inv" placeholder="-"></td>
-                    <td><input type="number" inputmode="decimal" id="inv_imit_${i}" class="inp-inv" placeholder="-"></td>
-                    <td><input type="number" inputmode="decimal" id="targ_true_${i}" class="inp-target" placeholder="-"></td>
-                    <td><input type="number" inputmode="decimal" id="targ_imit_${i}" class="inp-target" placeholder="-"></td>
-                `;
-                cBody.appendChild(tr);
-            }
-            table.appendChild(cBody);
-            hBody.onclick = () => { hBody.firstChild.classList.toggle('collapsed'); cBody.classList.toggle('hidden'); };
+        db.forEach((item, i) => {
+            const tr = document.createElement('tr');
+            // ▼▼▼ 修改處：每個 input 都加入了限制語法 ▼▼▼
+            tr.innerHTML = `
+                <td style="text-align:center; padding-left:15px; font-weight:500;">${item.name}</td>
+                <td><input type="number" min="0" oninput="if(value<0)value=0" id="inv_true_${i}" class="inp-inv" placeholder="-"></td>
+                <td><input type="number" min="0" oninput="if(value<0)value=0" id="inv_imit_${i}" class="inp-inv" placeholder="-"></td>
+                <td><input type="number" min="0" oninput="if(value<0)value=0" id="targ_true_${i}" class="inp-target" placeholder="-"></td>
+                <td><input type="number" min="0" oninput="if(value<0)value=0" id="targ_imit_${i}" class="inp-target" placeholder="-"></td>
+            `;
+            tableRoot.appendChild(tr);
         });
+
+        // 綁定 Enter 鍵計算
+        document.addEventListener('keydown', e => { if(e.key==='Enter') calculate(); });
     };
 
-    function resetAll() { document.querySelectorAll('input').forEach(i => i.value = ''); calculate(); }
+
+    function resetAll() {
+        document.querySelectorAll('input').forEach(i => i.value = '');
+        calculate();
+    }
 
     function calculate() {
-        let inventory = { points: 0, '貢獻': 0, '銅': 0, '鐵': 0, '珊瑚': 0, '棱晶': 0, '振金': 0, '神源石': 0 };
+        let inventory = {};
+        matKeys.forEach(k => inventory[k] = 0);
         let targets = [];
 
         db.forEach((item, idx) => {
-            let ivT = parseInt(document.getElementById(`inv_true_${idx}`).value) || 0;
-            let ivI = parseInt(document.getElementById(`inv_imit_${idx}`).value) || 0;
-            let tgT = parseInt(document.getElementById(`targ_true_${idx}`).value) || 0;
-            let tgI = parseInt(document.getElementById(`targ_imit_${idx}`).value) || 0;
+            let invTrue = parseInt(document.getElementById(`inv_true_${idx}`).value) || 0;
+            let invImit = parseInt(document.getElementById(`inv_imit_${idx}`).value) || 0;
+            let targTrue = parseInt(document.getElementById(`targ_true_${idx}`).value) || 0;
+            let targImit = parseInt(document.getElementById(`targ_imit_${idx}`).value) || 0;
 
-            if (ivT > 0) {
-                inventory.points += (item.t.p * ivT);
-                inventory['貢獻'] += ((item.t.c||0) * ivT);
-                if (item.t.m) for(let k in item.t.m) inventory[k] += (item.t.m[k] * ivT);
+            if (invTrue > 0) {
+                inventory.points += (item.t.p * invTrue);
+                inventory['貢獻'] += ((item.t.c||0) * invTrue);
+                if (item.t.m) {
+                    for(let k in item.t.m) inventory[k] += (item.t.m[k] * invTrue);
+                }
             }
-            if (ivI > 0) inventory.points += (item.i.p * ivI);
-            if (tgT > 0 || tgI > 0) targets.push({ data: item, keep: tgT, imit: tgI });
+            if (invImit > 0) {
+                inventory.points += (item.i.p * invImit);
+            }
+
+            if (targTrue > 0 || targImit > 0) {
+                targets.push({ data: item, keep: targTrue, imit: targImit });
+            }
         });
 
-        let currentUsage = { points: 0, '貢獻': 0, '銅': 0, '鐵': 0, '珊瑚': 0, '棱晶': 0, '振金': 0, '神源石': 0 };
-        let maxPeak = { ...currentUsage };
+        let currentUsage = {};
+        let maxPeak = {};
+        matKeys.forEach(k => { currentUsage[k] = 0; maxPeak[k] = 0; });
+
         let steps = [];
-        
-        // 排序：過渡裝先做完拆掉，最後才做要保留的
-        let order = [...targets.filter(t => t.keep === 0).sort((a,b) => b.data.t.p - a.data.t.p), ...targets.filter(t => t.keep > 0).sort((a,b) => a.data.t.p - b.data.t.p)];
+        let cycleGroup = targets.filter(t => t.keep === 0);
+        let keepGroup = targets.filter(t => t.keep > 0);
+        cycleGroup.sort((a,b) => b.data.t.p - a.data.t.p);
+        keepGroup.sort((a,b) => a.data.t.p - b.data.t.p);
+        let order = [...cycleGroup, ...keepGroup];
 
         if (order.length === 0 && inventory.points === 0) {
-            document.getElementById('res_tbody').innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;padding:20px;">尚無數據</td></tr>';
+            document.getElementById('res_tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999; padding:20px;">尚無數據</td></tr>';
             document.getElementById('step_summary').innerHTML = '';
             return;
         }
 
         order.forEach(t => {
             let item = t.data;
-            let count = (t.keep > 0) ? t.keep : 1;
             let isKeep = t.keep > 0;
-
-            steps.push(`<li class="${isKeep?'keep':'temp'}"><strong>${item.name} 真x${count}${t.imit>0?' + 仿x'+t.imit:''}</strong><br><small>${isKeep?'保留裝備':'過渡分解'}</small></li>`);
-
-            const add = (m) => {
-                currentUsage.points += (item.t.p * m);
-                currentUsage['貢獻'] += ((item.t.c||0) * m);
-                if(item.t.m) for(let k in item.t.m) currentUsage[k] += (item.t.m[k] * m);
-                for(let k in currentUsage) if(currentUsage[k] > maxPeak[k]) maxPeak[k] = currentUsage[k];
-            };
+            let logClass = isKeep ? "keep" : "temp";
+            let trueCount = (t.keep > 0) ? t.keep : 1;
             
-            add(count);
+            let t_op_val = item.t.p / 10; 
+            let i_op_val = item.i.p / 10; 
+            
+            let total_true_op = t_op_val * trueCount;
+            let total_imit_op = 0;
+            if(t.imit > 0) total_imit_op = i_op_val * t.imit;
+
+            let stepTitle = `${item.name} 真x${trueCount}`;
+            if(t.imit > 0) stepTitle += ` ➜ 仿x${t.imit}`;
+
+            let detail = "";
+            let sum_val = total_true_op + total_imit_op;
+            
+            detail += `單邊材料數量：${total_true_op.toLocaleString()}(真) + ${total_imit_op.toLocaleString()}(仿) = ${sum_val.toLocaleString()}<br>`;
+            detail += `*${total_true_op.toLocaleString()} = ${item.t.p}/5/2<br>`;
+            
             if(t.imit > 0) {
-                currentUsage.points += (item.i.p * t.imit);
-                if(currentUsage.points > maxPeak.points) maxPeak.points = currentUsage.points;
+                detail += `*${total_imit_op.toLocaleString()} = ${item.i.p}/5/2*${t.imit}件<br>`;
             }
-            if(!isKeep) {
-                currentUsage.points -= (item.t.p * count);
-                currentUsage['貢獻'] -= ((item.t.c||0) * count);
-                if(item.t.m) for(let k in item.t.m) currentUsage[k] -= (item.t.m[k] * count);
+            
+            if(isKeep) {
+                detail += `<span style="color:#27ae60">保留 真x${trueCount}</span>`;
+            } else {
+                detail += `<span style="color:#f39c12">分解 真x${trueCount}</span>`;
+            }
+
+            steps.push(`<li class="${logClass}">
+                <span class="step-header">${stepTitle}</span>
+                <span class="step-detail">${detail}</span>
+            </li>`);
+
+            function addCost(multiplier) {
+                currentUsage.points += (item.t.p * multiplier);
+                if (currentUsage.points > maxPeak.points) maxPeak.points = currentUsage.points;
+                currentUsage['貢獻'] += ((item.t.c||0) * multiplier);
+                if (currentUsage['貢獻'] > maxPeak['貢獻']) maxPeak['貢獻'] = currentUsage['貢獻'];
+
+                if(item.t.m) {
+                    for(let k in item.t.m) {
+                        currentUsage[k] += (item.t.m[k] * multiplier);
+                        if(currentUsage[k] > maxPeak[k]) maxPeak[k] = currentUsage[k];
+                    }
+                }
+            }
+            addCost(trueCount);
+
+            if (t.imit > 0) {
+                let imitCost = t.imit * item.i.p;
+                currentUsage.points += imitCost; 
+                if (currentUsage.points > maxPeak.points) maxPeak.points = currentUsage.points;
+            }
+
+            if (!isKeep) {
+                function removeCost(multiplier) {
+                    currentUsage.points -= (item.t.p * multiplier);
+                    currentUsage['貢獻'] -= ((item.t.c||0) * multiplier);
+                    if(item.t.m) {
+                        for(let k in item.t.m) currentUsage[k] -= (item.t.m[k] * multiplier);
+                    }
+                }
+                removeCost(trueCount);
             }
         });
 
         let html = '';
-        let netBoxes = Math.ceil(Math.max(0, maxPeak.points - inventory.points) / 5);
-        html += `<tr style="background:#fff8e1;"><td>橘色盒子</td><td>${Math.ceil(maxPeak.points/5).toLocaleString()}</td><td class="${netBoxes>0?'status-bad':'status-ok'}">${netBoxes>0?'缺'+netBoxes:'充足'}${netBoxes>0?'<br>(開'+Math.ceil(netBoxes/2)+'組)':''}</td></tr>`;
         
-        ['貢獻','銅','鐵','珊瑚','棱晶','振金','神源石'].forEach(k => {
-            if(maxPeak[k] > 0) {
-                let miss = Math.max(0, maxPeak[k] - inventory[k]);
-                html += `<tr><td>${k}</td><td>${maxPeak[k].toLocaleString()}</td><td class="${miss>0?'status-bad':'status-ok'}">${miss>0?'缺'+miss.toLocaleString():'充足'}</td></tr>`;
-            }
+        let boxPeak = Math.ceil(maxPeak.points / POINTS_PER_BOX);
+        let openPeak = Math.ceil(boxPeak / BOXES_PER_OPEN);
+        let boxInv = Math.floor(inventory.points / POINTS_PER_BOX);
+        
+        let netPoints = maxPeak.points - inventory.points;
+        let netBoxes = Math.ceil(Math.max(0, netPoints) / POINTS_PER_BOX);
+        let netOpens = Math.ceil(netBoxes / BOXES_PER_OPEN);
+
+        html += `<tr style="background:#fff8e1;">
+            <td>橘色盒子</td>
+            <td>${boxPeak.toLocaleString()}</td>
+            <td>${boxInv.toLocaleString()}</td>
+            <td class="${netBoxes>0?'status-bad':'status-ok'}">
+                ${netBoxes>0 ? '缺'+netBoxes.toLocaleString() : '充足'}<br>
+                ${netBoxes>0 ? '<span class="sub-text"></span>' : ''}
+            </td>
+        </tr>`;
+
+        let usedMats = matKeys.filter(k => k !== 'points' && maxPeak[k] > 0);
+        usedMats.forEach(k => {
+            let peak = maxPeak[k];
+            let inv = inventory[k];
+            let missing = Math.max(0, peak - inv);
+            html += `<tr>
+                <td>${k}</td>
+                <td>${peak.toLocaleString()}</td>
+                <td>${inv.toLocaleString()}</td>
+                <td class="${missing>0?'status-bad':'status-ok'}">${missing>0 ? '缺'+missing.toLocaleString() : '充足'}</td>
+            </tr>`;
         });
 
         document.getElementById('res_tbody').innerHTML = html;
         document.getElementById('step_summary').innerHTML = steps.join('');
     }
 </script>
+
 </body>
 </html>
