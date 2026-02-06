@@ -38,7 +38,7 @@
         .table-scroll { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
         
         /* 表格設定 */
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 500px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 400px; }
         
         /* 欄寬微調 */
         col.c-name { width: 24%; }
@@ -67,12 +67,9 @@
     border-radius: 6px; 
     box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
     border-top: 4px solid var(--accent); 
-    position: sticky;
-    top: 20px;
     display: flex;
     flex-direction: column;
     gap: 15px;
-    max-height: 95vh;
     min-width: 0;    
 }
         
@@ -144,8 +141,7 @@
             background: #fafafa;
             border-radius: 4px;
             padding: 15px;
-            overflow-y: auto;
-            min-height: 300px;
+               min-height: 300px;
         }
         .log-list { list-style: none; padding: 0; margin: 0; font-size: 0.9rem; }
         .log-list li { margin-bottom: 15px; border-left: 3px solid #ddd; padding-left: 12px; line-height: 1.6; }
@@ -268,12 +264,12 @@
             </table>
         </div>
 
-        <div style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
-            <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; color:#666;">建議流程</h4>
-            <div class="log-box">
-                <ul id="step_summary" class="log-list"></ul>
-            </div>
-        </div>
+<div style="display:flex; flex-direction:column; flex:1;">
+    <h4 style="margin: 0 0 10px 0; font-size: 0.95rem; color:#666;">建議流程</h4>
+    <div class="log-box">
+        <ul id="step_summary" class="log-list"></ul>
+    </div>
+</div>
     </div>
 </div>
 
@@ -305,13 +301,14 @@
     const BOXES_PER_OPEN = 2; 
     const matKeys = ['points', '貢獻', '銅', '鐵', '珊瑚', '棱晶', '振金', '神源石'];
     
-    // 初始化：
+    // 初始化：移除原本的分組邏輯，直接生成所有列
 window.onload = function() {
         const tableRoot = document.getElementById('tableRoot');
         tableRoot.innerHTML = ''; // 清空
 
         db.forEach((item, i) => {
             const tr = document.createElement('tr');
+            // ▼▼▼ 修改處：每個 input 都加入了限制語法 ▼▼▼
             tr.innerHTML = `
                 <td style="text-align:center; padding-left:15px; font-weight:500;">${item.name}</td>
                 <td><input type="number" min="0" oninput="if(value<0)value=0" id="inv_true_${i}" class="inp-inv" placeholder="-"></td>
@@ -395,7 +392,7 @@ window.onload = function() {
             let detail = "";
             let sum_val = total_true_op + total_imit_op;
             
-            detail += `單邊盒子數量：${total_true_op.toLocaleString()}(真) + ${total_imit_op.toLocaleString()}(仿) = ${sum_val.toLocaleString()}<br>`;
+            detail += `單邊材料數量：${total_true_op.toLocaleString()}(真) + ${total_imit_op.toLocaleString()}(仿) = ${sum_val.toLocaleString()}<br>`;
             detail += `*${total_true_op.toLocaleString()} = ${item.t.p}/5/2<br>`;
             
             if(t.imit > 0) {
@@ -485,5 +482,4 @@ window.onload = function() {
 </script>
 
 </body>
-
 </html>
