@@ -23,7 +23,6 @@
     margin: 0; 
     padding: 20px; 
     box-sizing: border-box;
-    /* ⚠️ 已移除 touch-action: none; 讓畫面可以正常上下滑動 ⚠️ */
   }
 
   /* 🔥 狀態列：毛玻璃效果與立體感 🔥 */
@@ -180,19 +179,21 @@
     box-sizing: border-box;
   }
 
+  /* 🌸 粉紅胖胖魚 (無眼睛、字置中) 🌸 */
   .number { 
     width: 75px; 
     height: 55px; 
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 80'%3E%3Cpath d='M 75,40 C 75,5 20,10 5,40 C 20,70 75,75 75,40 Z' fill='%2399ccff' stroke='%233377aa' stroke-width='3'/%3E%3Cpolygon points='72,40 95,15 95,65' fill='%2399ccff' stroke='%233377aa' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='25' cy='30' r='3' fill='%23333'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 80'%3E%3Cellipse cx='45' cy='40' rx='35' ry='30' fill='%23f48fb1' stroke='%23c2185b' stroke-width='3'/%3E%3Cpolygon points='75,40 95,25 95,55' fill='%23f48fb1' stroke='%23c2185b' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
     display: flex; justify-content: center; align-items: center; 
-    font-size: 28px; font-weight: 900; color: #1a4a75;
+    font-size: 28px; font-weight: 900; color: #880e4f;
     cursor: grab; user-select: none; 
-    touch-action: none; /* 僅保留小魚的防滑動，讓拖曳更順暢 */
+    touch-action: none; 
     position: absolute; z-index: 10;
-    padding-right: 15px;
+    padding-right: 8px; /* 微調數字置中 */
+    padding-bottom: 2px;
     box-sizing: border-box;
     filter: drop-shadow(0px 5px 3px rgba(0,0,0,0.3));
     transition: transform 0.1s;
@@ -220,12 +221,6 @@
     background-color: #00b894; 
     box-shadow: 0 6px 0 #008f73, 0 8px 10px rgba(0,0,0,0.2);
     padding: 15px 30px; font-size: 24px; width: 100%; 
-  }
-  #next-btn { 
-    background-color: #fdcb6e; 
-    color: #d63031;
-    box-shadow: 0 6px 0 #e1b12c, 0 8px 10px rgba(0,0,0,0.2);
-    padding: 15px 30px; font-size: 24px; width: 100%; display: none; 
   }
   
   #clear-btn { 
@@ -258,18 +253,17 @@
     75% { transform: translateX(-5px); }
   }
 
+  /* 🚀 直線上升動畫 🚀 */
   @keyframes swimUpLPath {
     0% { transform: translate(var(--fly-start-x), var(--fly-start-y)) scale(1); }
-    70% { transform: translate(var(--fly-start-x), -20px) scale(1.2); } 
     100% { transform: translate(0, 0) scale(1); }
   }
-  .swim-animation { animation: swimUpLPath 0.8s ease-in-out forwards; }
+  .swim-animation { animation: swimUpLPath 0.5s ease-in-out forwards; }
 
   /* 🌟🌟 自動根據視窗高度縮小 (響應式設計) 🌟🌟 */
   @media (max-height: 850px) {
     body { padding: 10px 15px; }
     
-    /* 縮小狀態列與標題 */
     .status-bar { padding: 8px 15px; margin-bottom: 10px; }
     #level-display { font-size: 20px; }
     .exp-bar-container { height: 18px; }
@@ -277,7 +271,6 @@
     h2 { font-size: 24px; }
     #clear-btn { padding: 8px 12px; font-size: 14px; }
     
-    /* 縮小遊戲板與格子 */
     .game-board { padding: 15px; margin-bottom: 10px; }
     .math-grid {
       grid-template-columns: 60px 60px 45px 60px;
@@ -287,18 +280,16 @@
     .num-text { font-size: 50px; }
     .sign-text { font-size: 45px; }
     
-    /* 縮小放置區與小魚 */
     .drop-zone { width: 60px; height: 50px; border-radius: 15px; }
     #carry-start-zone { width: 40px; height: 40px; }
     #carry-start-zone::after { font-size: 24px; }
     
     .tray { padding: 15px 10px; gap: 8px; margin-bottom: 10px; }
     .tray-item { width: 60px; height: 45px; }
-    .number { width: 60px; height: 45px; font-size: 24px; padding-right: 12px; }
+    .number { width: 60px; height: 45px; font-size: 24px; padding-right: 6px; }
     
-    /* 縮小按鈕 */
     .btn-container { margin-bottom: 10px; }
-    #check-btn, #next-btn { padding: 12px 20px; font-size: 20px; }
+    #check-btn { padding: 12px 20px; font-size: 20px; }
     #message-area { font-size: 18px; min-height: 30px; margin-bottom: 10px; padding: 5px 15px;}
     .msg-levelup { font-size: 22px; }
   }
@@ -343,7 +334,6 @@
 <div id="message-area"></div>
 <div class="btn-container">
   <button id="check-btn">確認答案</button>
-  <button id="next-btn">下一題 ➔</button>
 </div>
 
 <div class="tray" id="tray"></div>
@@ -387,9 +377,9 @@
     document.addEventListener('pointermove', onDrag);
     document.addEventListener('pointerup', endDrag);
     
-    // 如果不是在顯示升級訊息，拖曳時就清空訊息
+    // 拖曳時清空錯誤訊息，如果是成功升級訊息則保留到換題
     let msgArea = document.getElementById('message-area');
-    if(!msgArea.classList.contains('msg-levelup')) {
+    if(!msgArea.classList.contains('msg-levelup') && !msgArea.classList.contains('msg-success')) {
        msgArea.innerText = '';
        msgArea.style.display = 'none';
     }
@@ -444,7 +434,7 @@
   // --- 遊戲狀態管理 (等級與經驗值) ---
   let currentExp = 0;
   let currentLevel = 1;
-  let expNeeded = 3; // 第一級需要 3 題
+  let expNeeded = 3;
 
   function updateStatusUI() {
     document.getElementById('level-display').innerText = `🌟 Lv. ${currentLevel}`;
@@ -482,7 +472,6 @@
 
     document.getElementById('check-btn').style.display = 'block';
     document.getElementById('clear-btn').style.display = 'block';
-    document.getElementById('next-btn').style.display = 'none';
     
     let msgArea = document.getElementById('message-area');
     msgArea.innerText = '';
@@ -562,14 +551,17 @@
         
         document.getElementById('check-btn').style.display = 'none';
         document.getElementById('clear-btn').style.display = 'none';
-        document.getElementById('next-btn').style.display = 'block';
+        
+        // ✨ 全自動換題：1.5秒後自動產生新題目 ✨
+        setTimeout(() => {
+            generateProblem();
+        }, 1500);
+
     } else {
         msgArea.innerText = "哎呀，答錯囉！再檢查看看呢？";
         msgArea.className = 'msg-error';
     }
   });
-
-  document.getElementById('next-btn').addEventListener('click', generateProblem);
 
   window.onload = () => {
       updateStatusUI();
