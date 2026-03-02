@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>小魚進位加法</title>
+<title>小魚進位加法 - RPG 升級版</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
 
@@ -22,8 +22,8 @@
     min-height: 100vh;
     margin: 0; 
     padding: 20px; 
-    touch-action: none; 
     box-sizing: border-box;
+    /* ⚠️ 已移除 touch-action: none; 讓畫面可以正常上下滑動 ⚠️ */
   }
 
   /* 🔥 狀態列：毛玻璃效果與立體感 🔥 */
@@ -180,7 +180,6 @@
     box-sizing: border-box;
   }
 
-  /* 為小魚增加浮雕陰影 */
   .number { 
     width: 75px; 
     height: 55px; 
@@ -190,7 +189,8 @@
     background-position: center;
     display: flex; justify-content: center; align-items: center; 
     font-size: 28px; font-weight: 900; color: #1a4a75;
-    cursor: grab; user-select: none; touch-action: none; 
+    cursor: grab; user-select: none; 
+    touch-action: none; /* 僅保留小魚的防滑動，讓拖曳更順暢 */
     position: absolute; z-index: 10;
     padding-right: 15px;
     box-sizing: border-box;
@@ -240,13 +240,12 @@
     padding: 5px 20px;
     border-radius: 20px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    display: none; /* 預設隱藏，有訊息才顯示 */
+    display: none; 
   }
   .msg-success { color: #00b894; display: inline-block !important; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
   .msg-error { color: #d63031; display: inline-block !important; animation: shake 0.4s; }
   .msg-levelup { color: #e84393; font-size: 26px; display: inline-block !important; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-  /* 動畫效果 */
   @keyframes popIn {
     0% { transform: scale(0.5); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
@@ -265,6 +264,44 @@
     100% { transform: translate(0, 0) scale(1); }
   }
   .swim-animation { animation: swimUpLPath 0.8s ease-in-out forwards; }
+
+  /* 🌟🌟 自動根據視窗高度縮小 (響應式設計) 🌟🌟 */
+  @media (max-height: 850px) {
+    body { padding: 10px 15px; }
+    
+    /* 縮小狀態列與標題 */
+    .status-bar { padding: 8px 15px; margin-bottom: 10px; }
+    #level-display { font-size: 20px; }
+    .exp-bar-container { height: 18px; }
+    .header-area { margin-bottom: 8px; }
+    h2 { font-size: 24px; }
+    #clear-btn { padding: 8px 12px; font-size: 14px; }
+    
+    /* 縮小遊戲板與格子 */
+    .game-board { padding: 15px; margin-bottom: 10px; }
+    .math-grid {
+      grid-template-columns: 60px 60px 45px 60px;
+      grid-template-rows: 50px 50px 50px 15px 50px;
+      gap: 6px;
+    }
+    .num-text { font-size: 50px; }
+    .sign-text { font-size: 45px; }
+    
+    /* 縮小放置區與小魚 */
+    .drop-zone { width: 60px; height: 50px; border-radius: 15px; }
+    #carry-start-zone { width: 40px; height: 40px; }
+    #carry-start-zone::after { font-size: 24px; }
+    
+    .tray { padding: 15px 10px; gap: 8px; margin-bottom: 10px; }
+    .tray-item { width: 60px; height: 45px; }
+    .number { width: 60px; height: 45px; font-size: 24px; padding-right: 12px; }
+    
+    /* 縮小按鈕 */
+    .btn-container { margin-bottom: 10px; }
+    #check-btn, #next-btn { padding: 12px 20px; font-size: 20px; }
+    #message-area { font-size: 18px; min-height: 30px; margin-bottom: 10px; padding: 5px 15px;}
+    .msg-levelup { font-size: 22px; }
+  }
 
 </style>
 </head>
