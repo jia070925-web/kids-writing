@@ -1,1 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小說閱讀器 - 1111 專用版</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; line-height: 1.8; margin: 0; padding: 20px; background-color: #f4f1ea; color: #333; }
+        /* 控制面板 */
+        .controls { position: sticky; top: 0; background: #fff; padding: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; z-index: 1000; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        button { padding: 8px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; font-size: 14px; }
+        button:hover { background: #f0f0f0; }
+        .active { background: #007bff !important; color: white !important; border-color: #007bff; }
+        
+        /* 編輯區域 */
+        #edit-area { display: none; margin-bottom: 20px; }
+        #content-input { width: 100%; height: 400px; padding: 15px; border-radius: 8px; border: 2px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        
+        /* 雲端同步區 */
+        .sync-panel { background: #eef2f7; padding: 10px; border-radius: 5px; font-size: 13px; display: none; width: 100%; }
+        
+        /* 小說內容顯示 */
+        .article-container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; min-height: 80vh; }
+        .article-content { font-size: 20px; white-space: pre-wrap; word-wrap: break-word; }
+        .size-m { font-size: 26px; }
+        .size-l { font-size: 34px; }
+        
+        .btn-save { background: #28a745; color: white; border: none; }
+        .btn-cloud { background: #6f42c1; color: white; border: none; }
+    </style>
+</head>
+<body>
 
+    <div class="controls">
+        <button onclick="toggleEdit()" style="background:#28a745; color:white;">✎ 貼上新內容</button>
+        <button onclick="toggleSyncPanel()">☁ 跨裝置同步</button>
+        <div style="margin-left:auto">
+            <button onclick="changeSize('s')" id="btn-s" class="active">小</button>
+            <button onclick="changeSize('m')" id="btn-m">中</button>
+            <button onclick="changeSize('l')" id="btn-l">大</button>
+        </div>
+
+        <div id="sync-panel" class="sync-panel">
+            同步密碼：<input type="text" id="sync-key" value="1111" style="width:50px; text-align:center;">
+            <button onclick="pushToCloud()" class="btn-cloud">↑ 存到雲端</button>
+            <button onclick="pullFromCloud()">↓ 從雲端抓取</button>
+            <span id="sync-msg" style="margin-left:10px; color:blue;"></span>
+        </div>
+    </div>
+
+    <div id="edit-area">
+        <textarea id="content-input" placeholder="請在這裡全選並貼上小說內容..."></textarea>
+        <div style="text-align:center; margin-top:10px;">
+            <button onclick="saveLocal()" class="btn-save" style="padding:10px 40px;">儲存並閱讀</button>
+        </div>
+    </div>
+
+    <div class="article-container">
+        <div id="display-content" class="article-content">內容讀取中...</div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display-content');
+        const input = document.getElementById('content-input');
+        
+        // --- 本地儲存功能 ---
+        function saveLocal() {
+            const text = input.value;
+            display.innerText = text;
+            localStorage.setItem('my_novel_text', text);
+            document.getElementById('edit-area').style.display = 'none';
+            window.scrollTo(0,0);
+        }
+
+        function changeSize(s) {
+            display.classList.remove('size-m', 'size-l');
+            document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+            if(s === 'm') display.classList.add('size-m');
+            if(s === 'l') display.classList.add('size-l');
+            document.getElementById('btn-' + s).classList.add('active');
+            localStorage.setItem('my_novel_size', s);
+        }
+
+        function toggleEdit() {
+            const area = document.getElementById('edit-area');
+            area.style.display = (area.style.display === 'block') ? 'none' : 'block';
+            if(area.style.display === 'block') input.value = display.innerText;
+        }
+
+        function toggleSyncPanel() {
+            const panel = document.getElementById('sync-panel');
+            panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        }
+
+        // --- 雲端同步功能 (使用 kvdb.io 免費空間) ---
+        // 為了你的隱私，我幫你加上你的帳號名稱作為路徑
+        const BUCKET = "jia070925_novels"; 
+        
+        async function pushToCloud() {
+            const key = document.getElementById('sync-key').value;
+            const text = display.innerText;
+            const msg = document.getElementById('sync-msg');
+            msg.innerText = "上傳中...";
+            
+            try {
+                await fetch(`https://kvdb.io/${BUCKET}/${key}`, {
+                    method: 'POST',
+                    body: text
+                });
+                msg.innerText = "成功存入雲端！";
+            } catch (e) {
+                msg.innerText = "上傳失敗，請檢查網路。";
+            }
+        }
+
+        async function pullFromCloud() {
+            const key = document.getElementById('sync-key').value;
+            const msg = document.getElementById('sync-msg');
+            msg.innerText = "抓取中...";
+            
+            try {
+                const res = await fetch(`https://kvdb.io/${BUCKET}/${key}`);
+                const text = await res.text();
+                if(text) {
+                    display.innerText = text;
+                    input.value = text;
+                    localStorage.setItem('my_novel_text', text);
+                    msg.innerText = "同步完成！";
+                } else {
+                    msg.innerText = "雲端無資料。";
+                }
+            } catch (e) {
+                msg.innerText = "抓取失敗。";
+            }
+        }
+
+        // 初始化
+        window.onload = () => {
+            const savedText = localStorage.getItem('my_novel_text');
+            if(savedText) display.innerText = savedText;
+            else display.innerText = "歡迎！請點擊左上角『貼上新內容』開始閱讀。";
+            
+            const savedSize = localStorage.getItem('my_novel_size') || 's';
+            changeSize(savedSize);
+        };
+    </script>
+</body>
+</html>
