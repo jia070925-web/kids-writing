@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小說閱讀器 - 穩定同步版</title>
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-    <style>
+    <title>小說閱讀器 - 1111 終極版</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo="> <style>
         body { font-family: "Microsoft JhengHei", sans-serif; line-height: 1.8; margin: 0; padding: 20px; background-color: #f4f1ea; color: #333; }
         .controls { position: sticky; top: 0; background: #fff; padding: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; z-index: 1000; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        button { padding: 8px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; font-size: 14px; }
+        button { padding: 8px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; font-size: 14px; transition: 0.3s; }
+        button:active { transform: scale(0.95); }
         .active { background: #007bff !important; color: white !important; border-color: #007bff; }
         #edit-area { display: none; margin-bottom: 20px; }
         #content-input { width: 100%; height: 450px; padding: 15px; border-radius: 8px; border: 2px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        .sync-panel { background: #eef2f7; padding: 10px; border-radius: 5px; font-size: 13px; display: none; width: 100%; }
+        .sync-panel { background: #eef2f7; padding: 10px; border-radius: 5px; font-size: 13px; display: none; width: 100%; border-left: 5px solid #007bff; }
         .article-container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; min-height: 80vh; }
         .article-content { font-size: 20px; white-space: pre-wrap; word-wrap: break-word; }
         .size-m { font-size: 26px; }
         .size-l { font-size: 34px; }
-        .msg-box { margin-left:10px; font-weight:bold; }
+        .status-msg { margin-left:10px; font-weight:bold; font-size: 12px; }
     </style>
 </head>
 <body>
 
     <div class="controls">
-        <button onclick="toggleEdit()" style="background:#28a745; color:white;">✎ 貼上新內容</button>
-        <button onclick="toggleSyncPanel()">☁ 跨裝置同步 (手機/電腦)</button>
+        <button onclick="toggleEdit()" style="background:#28a745; color:white; border:none;">✎ 貼上內容</button>
+        <button onclick="toggleSyncPanel()">☁ 跨裝置同步</button>
         <div style="margin-left:auto">
             <button onclick="changeSize('s')" id="btn-s" class="active">小</button>
             <button onclick="changeSize('m')" id="btn-m">中</button>
@@ -32,17 +32,17 @@
         </div>
 
         <div id="sync-panel" class="sync-panel">
-            同步暗號：<input type="text" id="sync-id" placeholder="上傳後會顯示暗號" style="width:180px; text-align:center;">
-            <button onclick="pushToCloud()" style="background:#007bff; color:white;">↑ 上傳內容 (電腦用)</button>
-            <button onclick="pullFromCloud()" style="background:#6f42c1; color:white;">↓ 抓取內容 (手機用)</button>
-            <span id="sync-msg" class="msg-box"></span>
+            同步暗號：<input type="text" id="sync-key" value="1111" style="width:60px; text-align:center; padding:4px;">
+            <button onclick="pushToCloud()" style="background:#007bff; color:white; border:none;">↑ 電腦存到雲端</button>
+            <button onclick="pullFromCloud()" style="background:#6f42c1; color:white; border:none;">↓ 手機從雲端抓取</button>
+            <span id="sync-msg" class="status-msg"></span>
         </div>
     </div>
 
     <div id="edit-area">
         <textarea id="content-input" placeholder="請在這裡全選並貼上小說內容..."></textarea>
         <div style="text-align:center; margin-top:10px;">
-            <button onclick="saveLocal()" style="padding:10px 40px; background:#28a745; color:white; border:none; border-radius:5px;">儲存並閱讀</button>
+            <button onclick="saveLocal()" style="padding:10px 40px; background:#28a745; color:white; border:none; border-radius:5px; font-size:16px;">儲存並開始閱讀</button>
         </div>
     </div>
 
@@ -53,10 +53,12 @@
     <script>
         const display = document.getElementById('display-content');
         const input = document.getElementById('content-input');
-        const syncIdInput = document.getElementById('sync-id');
-        const syncMsg = document.getElementById('sync-msg');
+        const msg = document.getElementById('sync-msg');
 
-        // 1. 本地基本功能
+        // --- 專屬你的 Pantry 保險箱配置 ---
+        const PANTRY_ID = "07511674-8848-408a-b570-360662666da8"; // 你的專屬 ID
+
+        // 1. 基本本地功能
         function saveLocal() {
             const text = input.value;
             display.innerText = text;
@@ -85,74 +87,68 @@
             panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
         }
 
-        // 2. 穩定的雲端同步 (使用 JsonBlob)
+        // 2. 雲端同步功能 (使用 Pantry Cloud - 最穩定且支援 CORS)
         async function pushToCloud() {
+            const key = document.getElementById('sync-key').value;
             const text = display.innerText;
-            if(!text || text.length < 5) return alert("請先貼上小說內容並儲存");
-            
-            syncMsg.innerText = "⏳ 上傳中...";
-            syncMsg.style.color = "blue";
+            if(!text || text.length < 5) return alert("請先貼上內容並儲存後再上傳");
+
+            msg.innerText = "⏳ 正在傳送到雲端...";
+            msg.style.color = "blue";
 
             try {
-                const response = await fetch('https://jsonblob.com/api/jsonBlob', {
+                // Pantry 使用 POST 或 PUT 來更新內容
+                const response = await fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${key}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ data: text })
+                    body: JSON.stringify({ novel_data: text })
                 });
-                
-                // 從 Header 取得自動產生的 ID
-                const blobUrl = response.headers.get('Location');
-                const id = blobUrl.split('/').pop();
-                
-                syncIdInput.value = id;
-                localStorage.setItem('last_sync_id', id);
-                syncMsg.innerText = "✅ 已存到雲端！請複製暗號。";
-                syncMsg.style.color = "green";
-                
-                // 自動選中，方便你複製
-                syncIdInput.select();
+
+                if (response.ok) {
+                    msg.innerText = "✅ 成功存入雲端！";
+                    msg.style.color = "green";
+                } else {
+                    const errorInfo = await response.text();
+                    throw new Error(errorInfo);
+                }
             } catch (e) {
-                syncMsg.innerText = "❌ 上傳失敗，請檢查網路。";
-                syncMsg.style.color = "red";
+                console.error(e);
+                msg.innerText = "❌ 失敗：" + e.message.substring(0, 20);
+                msg.style.color = "red";
+                alert("上傳失敗，可能是內容太長或網路擋住了 API。");
             }
         }
 
         async function pullFromCloud() {
-            const id = syncIdInput.value.trim();
-            if(!id) return alert("請輸入同步暗號");
-            
-            syncMsg.innerText = "⏳ 抓取中...";
-            syncMsg.style.color = "blue";
+            const key = document.getElementById('sync-key').value;
+            msg.innerText = "⏳ 正在從雲端抓取...";
+            msg.style.color = "blue";
 
             try {
-                const res = await fetch(`https://jsonblob.com/api/jsonBlob/${id}`);
-                const json = await res.json();
+                const res = await fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${key}`);
+                if (!res.ok) throw new Error("找不到資料");
                 
-                if(json && json.data) {
-                    display.innerText = json.data;
-                    input.value = json.data;
-                    localStorage.setItem('novel_text', json.data);
-                    localStorage.setItem('last_sync_id', id);
-                    syncMsg.innerText = "✅ 同步成功！";
-                    syncMsg.style.color = "green";
-                    document.getElementById('sync-panel').style.display = 'none';
+                const json = await res.json();
+                if(json && json.novel_data) {
+                    display.innerText = json.novel_data;
+                    input.value = json.novel_data;
+                    localStorage.setItem('novel_text', json.novel_data);
+                    msg.innerText = "✅ 同步成功！";
+                    msg.style.color = "green";
                 }
             } catch (e) {
-                syncMsg.innerText = "❌ 抓不到資料，請檢查暗號是否正確。";
-                syncMsg.style.color = "red";
+                msg.innerText = "❌ 抓不到資料，請確認電腦端有按上傳。";
+                msg.style.color = "red";
             }
         }
 
         window.onload = () => {
             const savedText = localStorage.getItem('novel_text');
             if(savedText) display.innerText = savedText;
-            else display.innerText = "歡迎！請點擊左上角『貼上新內容』開始閱讀。";
+            else display.innerText = "歡迎！點擊左上角『貼上內容』開始。";
             
             const savedSize = localStorage.getItem('novel_size') || 's';
             changeSize(savedSize);
-            
-            const lastId = localStorage.getItem('last_sync_id');
-            if(lastId) syncIdInput.value = lastId;
         };
     </script>
 </body>
