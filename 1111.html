@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小說閱讀器 - 壓縮同步版</title>
+    <title>小說閱讀器 - 穩定存檔版</title>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <style>
@@ -13,19 +13,19 @@
         .active { background: #007bff !important; color: white !important; border-color: #007bff; }
         #edit-area { display: none; margin-bottom: 20px; }
         #content-input { width: 100%; height: 450px; padding: 15px; border-radius: 8px; border: 2px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        .sync-panel { background: #eef2f7; padding: 10px; border-radius: 5px; font-size: 13px; display: none; width: 100%; border-left: 5px solid #6f42c1; }
+        .sync-panel { background: #eef2f7; padding: 15px; border-radius: 5px; font-size: 13px; display: none; width: 100%; border-left: 5px solid #28a745; }
         .article-container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; min-height: 80vh; }
         .article-content { font-size: 20px; white-space: pre-wrap; word-wrap: break-word; }
         .size-m { font-size: 26px; }
         .size-l { font-size: 34px; }
-        .status-msg { margin-left:10px; font-weight:bold; }
+        .status-msg { display: block; margin-top: 10px; font-weight: bold; color: green; }
     </style>
 </head>
 <body>
 
     <div class="controls">
         <button onclick="toggleEdit()" style="background:#28a745; color:white; border:none;">✎ 貼上內容</button>
-        <button onclick="toggleSyncPanel()">☁ 跨裝置同步 (大容量壓縮版)</button>
+        <button onclick="toggleSyncPanel()" style="background:#007bff; color:white; border:none;">⇄ 跨裝置同步 (手動碼)</button>
         <div style="margin-left:auto">
             <button onclick="changeSize('s')" id="btn-s" class="active">小</button>
             <button onclick="changeSize('m')" id="btn-m">中</button>
@@ -33,18 +33,24 @@
         </div>
 
         <div id="sync-panel" class="sync-panel">
-            同步暗號：<input type="text" id="sync-key" placeholder="上傳後會顯示" style="width:250px; text-align:center; padding:5px;">
-            <button onclick="pushToCloud()" style="background:#007bff; color:white; border:none;">↑ 上傳內容 (壓縮)</button>
-            <button onclick="pullFromCloud()" style="background:#6f42c1; color:white; border:none;">↓ 抓取內容 (解壓縮)</button>
-            <span id="sync-msg" class="status-msg"></span>
-            <div style="margin-top:5px; color:#666; font-size:11px;">* 提示：上傳後請複製暗號到手機貼上即可抓取。</div>
+            <strong>【同步步驟】</strong><br>
+            1. 在電腦點「產生並複製存檔碼」 <br>
+            2. 透過 LINE 傳給自己 <br>
+            3. 在手機貼上代碼點「匯入存檔碼」
+            <hr>
+            <textarea id="sync-code-area" placeholder="在此貼上同步碼..." style="width:100%; height:80px; margin-top:10px; border-radius:4px; padding:5px;"></textarea>
+            <div style="margin-top:10px;">
+                <button onclick="generateSyncCode()" style="background:#28a745; color:white; border:none;">↑ 產生並複製存檔碼</button>
+                <button onclick="importSyncCode()" style="background:#6f42c1; color:white; border:none;">↓ 匯入存檔碼</button>
+                <span id="sync-msg" class="status-msg"></span>
+            </div>
         </div>
     </div>
 
     <div id="edit-area">
         <textarea id="content-input" placeholder="請在這裡全選並貼上小說內容..."></textarea>
         <div style="text-align:center; margin-top:10px;">
-            <button onclick="saveLocal()" style="padding:10px 40px; background:#28a745; color:white; border:none; border-radius:5px; font-size:16px;">儲存並開始閱讀</button>
+            <button onclick="saveLocal()" style="padding:10px 40px; background:#28a745; color:white; border:none; border-radius:5px; font-size:16px;">儲存並閱讀</button>
         </div>
     </div>
 
@@ -55,10 +61,10 @@
     <script>
         const display = document.getElementById('display-content');
         const input = document.getElementById('content-input');
-        const syncInput = document.getElementById('sync-key');
+        const codeArea = document.getElementById('sync-code-area');
         const msg = document.getElementById('sync-msg');
 
-        // 1. 本地功能
+        // 1. 本地讀寫與調整
         function saveLocal() {
             const text = input.value;
             display.innerText = text;
@@ -87,75 +93,52 @@
             panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
         }
 
-        // 2. 雲端同步 (LZ-String 壓縮 + JsonBlob 大容量)
-        async function pushToCloud() {
+        // 2. 存檔碼功能 (LZ-String 壓縮)
+        function generateSyncCode() {
             const text = display.innerText;
-            if(!text || text.length < 5) return alert("請先儲存內容");
-
-            msg.innerText = "⏳ 正在壓縮並上傳...";
-            msg.style.color = "blue";
-
-            try {
-                // 執行壓縮：將純文字壓縮成一個安全的網址字串
-                const compressed = LZString.compressToEncodedURIComponent(text);
-                
-                const response = await fetch('https://jsonblob.com/api/jsonBlob', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ c_data: compressed })
-                });
-
-                if (response.ok) {
-                    const blobUrl = response.headers.get('Location');
-                    const id = blobUrl.split('/').pop();
-                    syncInput.value = id;
-                    localStorage.setItem('novel_blob_id', id);
-                    msg.innerText = "✅ 上傳成功！請複製暗號。";
-                    msg.style.color = "green";
-                    syncInput.select();
-                }
-            } catch (e) {
-                msg.innerText = "❌ 上傳失敗：" + e.message;
-                msg.style.color = "red";
-            }
+            if(!text || text.length < 5) return alert("請先貼上小說內容");
+            
+            // 壓縮
+            const compressed = LZString.compressToEncodedURIComponent(text);
+            codeArea.value = compressed;
+            
+            // 自動複製到剪貼簿
+            codeArea.select();
+            document.execCommand('copy');
+            
+            msg.innerText = "✅ 存檔碼已產生並複製！請去 LINE 傳送給自己。";
+            msg.style.color = "green";
         }
 
-        async function pullFromCloud() {
-            const id = syncInput.value.trim();
-            if(!id) return alert("請輸入同步暗號");
-
-            msg.innerText = "⏳ 正在抓取並解壓...";
-            msg.style.color = "blue";
+        function importSyncCode() {
+            const code = codeArea.value.trim();
+            if(!code) return alert("請貼上存檔碼");
 
             try {
-                const res = await fetch(`https://jsonblob.com/api/jsonBlob/${id}`);
-                const json = await res.json();
-                
-                if(json && json.c_data) {
-                    // 執行解壓縮：將字串還原回純文字
-                    const originalText = LZString.decompressFromEncodedURIComponent(json.c_data);
+                // 解壓縮
+                const originalText = LZString.decompressFromEncodedURIComponent(code);
+                if(originalText) {
                     display.innerText = originalText;
                     input.value = originalText;
                     localStorage.setItem('novel_text', originalText);
-                    localStorage.setItem('novel_blob_id', id);
-                    msg.innerText = "✅ 同步成功！";
-                    msg.style.color = "green";
+                    msg.innerText = "✅ 匯入成功！內容已更新。";
+                    msg.style.color = "blue";
+                    setTimeout(() => { document.getElementById('sync-panel').style.display = 'none'; }, 1000);
+                } else {
+                    throw new Error();
                 }
             } catch (e) {
-                msg.innerText = "❌ 抓取失敗，請確認暗號。";
-                msg.style.color = "red";
+                alert("存檔碼無效，請確認是否複製完整。");
             }
         }
 
         window.onload = () => {
             const savedText = localStorage.getItem('novel_text');
             if(savedText) display.innerText = savedText;
+            else display.innerText = "歡迎！點擊左上角『貼上內容』開始。";
             
             const savedSize = localStorage.getItem('novel_size') || 's';
             changeSize(savedSize);
-
-            const lastId = localStorage.getItem('novel_blob_id');
-            if(lastId) syncInput.value = lastId;
         };
     </script>
 </body>
