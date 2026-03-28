@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>生字筆順練習簿</title>
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <script src="https://unpkg.com/pinyin-pro"></script>
+    
+    <style>
+        /* --- 基礎設定 --- */
+        body { 
+            font-family: "標楷體", "KaiTi", serif; 
+            margin: 0; padding: 20px; 
+            background-color: #f0f2f5; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* --- 控制面板 --- */
+        .controls { 
+            background: white; padding: 20px; border-radius: 8px; 
+            margin-bottom: 20px; text-align: center; width: 100%; max-width: 900px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .control-group { margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        
+        input[type="text"] { padding: 8px; font-size: 1.2rem; border: 2px solid #ccc; border-radius: 5px; width: 250px;}
+        input[type="text"]:focus { border-color: #4CAF50; outline: none; }
+        
+        select { padding: 8px; font-size: 1.1rem; border: 2px solid #ccc; border-radius: 5px; cursor: pointer; }
+
+        button { 
+            padding: 10px 20px; font-size: 1.1rem; cursor: pointer; 
+            background-color: #4CAF50; color: white; border: none; border-radius: 4px;
+            font-weight: bold; transition: background 0.2s;
+        }
+        button:hover { background-color: #45a049; }
+        button.print-btn { background-color: #2196F3; }
+        button.print-btn:hover { background-color: #0b7dda; }
+
+        /* --- 注音編輯區 --- */
+        #zhuyin-editor {
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+            background: #eef2f5; padding: 15px; border-radius: 8px; margin-top: 15px;
+        }
+        .zhuyin-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .zhuyin-item label { font-size: 1.2rem; font-weight: bold; color: #333;}
+        .zhuyin-item input { width: 55px; text-align: center; font-size: 1rem; padding: 4px; font-family: "標楷體", "KaiTi", serif;}
+
+        /* --- A4 紙張與分頁設定 --- */
+        #pages-container {
+            display: flex; flex-direction: column; gap: 20px; align-items: center;
+        }
+        .page {
+            width: 210mm; 
+            height: 297mm; 
+            background: white;
+            padding: 12mm 10mm; 
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- 表格與 RTL (從右到左) 核心設定 --- */
+        .practice-table {
+            width: 100%; height: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            direction: rtl; 
+        }
+        .practice-table th, .practice-table td {
+            border: 2px solid #333;
+            text-align: center;
+            vertical-align: top;
+            direction: ltr; 
+        }
+
+        .word-td, .stroke-td { padding: 5px 2px; }
+        .practice-td { padding: 0; vertical-align: top; }
+
+        .label-col { 
+            width: 35px; 
+            font-size: 1.2rem; font-weight: bold; 
+            vertical-align: middle !important;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 5px;
+            padding: 5px !important;
+        }
+
+        /* --- 生字與注音區塊 --- */
+        .char-zhuyin-container {
+            display: flex; justify-content: center; align-items: center;
+            height: 70px; margin: 0 auto;
+        }
+        .char-main { font-size: 50px; flex-grow: 1; text-align: center; }
+        .zhuyin-main {
+            width: 30px; 
+            display: flex; justify-content: center; align-items: center;
+            border-left: 1px dotted #999;
+            height: 100%;
+        }
+
+        /* --- 注音排版專用 CSS --- */
+        .zy-wrapper { display: flex; flex-direction: row; align-items: center; justify-content: center; }
+        .zy-wrapper-light { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .zy-symbols { display: flex; flex-direction: column; align-items: center; font-size: 14px; line-height: 1.1; font-weight: bold;}
+        .zy-tone-right { margin-left: 1px; font-size: 13px; font-weight: bold;}
+        .zy-tone-top { font-size: 13px; margin-bottom: 1px; font-weight: bold;}
+
+        /* --- 描寫格專用注音 CSS (淺灰色) --- */
+        .zy-wrapper-tracing { display: flex; flex-direction: row; align-items: center; justify-content: center; color: #CCCCCC;}
+        .zy-wrapper-light-tracing { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #CCCCCC;}
+        .zy-symbols-tracing { display: flex; flex-direction: column; align-items: center; font-size: 14px; line-height: 1.1; font-weight: bold; color: #CCCCCC;}
+        .zy-tone-right-tracing { margin-left: 1px; font-size: 13px; font-weight: bold; color: #CCCCCC;}
+        .zy-tone-top-tracing { font-size: 13px; margin-bottom: 1px; font-weight: bold; color: #CCCCCC;}
+
+
+        /* --- 筆順區塊 --- */
+        .stroke-container {
+            display: flex; flex-direction: column; flex-wrap: wrap; 
+            align-content: center; justify-content: flex-start; gap: 4px;
+            height: 500px; 
+            direction: rtl; 
+        }
+
+        /* --- 練習格整體容器 --- */
+        .practice-container {
+            display: flex; flex-direction: column; align-items: stretch; width: 100%; height: 100%;
+        }
+
+        /* --- 單一行練習格 (包含生字格與注音格) --- */
+        .practice-unit {
+            display: flex; 
+            flex-direction: row; 
+            height: 70px; 
+            border-bottom: 1px solid #777; 
+        }
+        .practice-unit:last-child {
+            border-bottom: none;
+        }
+
+        /* --- 格子通用樣式 --- */
+        .grid-box {
+            position: relative; background-color: white; box-sizing: border-box;
+            flex-grow: 1; 
+            height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            direction: ltr;
+        }
+        .grid-box.small { 
+            width: 32px; height: 32px; flex-grow: 0; border: 1px dotted #999; margin: 1px;
+        }
+
+        /* --- 獨立的注音格 --- */
+        .grid-zhuyin {
+            width: 25px; height: 100%;
+            border-left: 1px solid #777; 
+            flex-shrink: 0;
+            /* 新增置中設定，解決注音偏上的問題 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 米字格背景 */
+        .grid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .grid-bg::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; border-top: 1px dashed #ccc; }
+        .grid-bg::after { content: ''; position: absolute; left: 50%; top: 0; width: 1px; height: 100%; border-left: 1px dashed #ccc; }
+        
+        svg.raw-svg { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; pointer-events: none;}
+
+        /* --- 列印專用設定 --- */
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            html, body { background: none; margin: 0; padding: 0; }
+            .controls, #zhuyin-editor { display: none !important; }
+            .page { 
+                box-shadow: none; 
+                padding: 12mm 10mm; 
+                width: 210mm; 
+                height: 293mm; 
+                page-break-after: always; 
+            }
+            .page:last-child {
+                page-break-after: auto; 
+            }
+            .practice-table th, .practice-table td { border-color: #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <h2>生字筆順練習簿</h2>
+        <div class="control-group">
+            <label>請輸入生字：</label>
+            <input type="text" id="charInput" value="一二三四五">
+            
+            <label>每頁字數：</label>
+            <select id="charsPerPage">
+                <option value="6" selected>6 字 / 頁</option>
+                <option value="7">7 字 / 頁</option>
+            </select>
+
+            <label>練習格格式：</label>
+            <select id="tracingCount">
+                <option value="1" selected>1描 5空</option>
+                <option value="2">2描 4空</option>
+                <option value="3">3描 3空</option>
+                <option value="4">4描 2空</option>
+                <option value="5">5描 1空</option>
+                <option value="6">6描 0空</option>
+            </select>
+
+            <button onclick="processInput()">產生練習表</button>
+            <button class="print-btn" onclick="window.print()">列印 (A4)</button>
+        </div>
+        
+        <div id="zhuyin-editor" style="display: none;"></div>
+    </div>
+
+    <div id="pages-container"></div>
+
+    <script>
+        let currentChars = [];
+        let zhuyinData = {};
+
+        // 預先加入一二三四五的注音，確保轉換百分百精準
+        const customDict = {
+            "一": "ㄧ", "二": "ㄦˋ", "三": "ㄙㄢ", "四": "ㄙˋ", "五": "ㄨˇ",
+            "小": "ㄒㄧㄠˇ", "時": "ㄕˊ", "不": "ㄅㄨˋ", "識": "ㄕˋ", "月": "ㄩㄝˋ",
+            "呼": "ㄏㄨ", "作": "ㄗㄨㄛˋ", "白": "ㄅㄞˊ", "玉": "ㄩˋ", "盤": "ㄆㄢˊ"
+        };
+
+        function pinyinToZhuyin(p) {
+            if (!p) return '';
+            const toneMap = { '1': '', '2': 'ˊ', '3': 'ˇ', '4': 'ˋ', '0': '˙', '5': '˙' };
+            let toneMatch = p.match(/[0-5]/);
+            let tone = toneMatch ? toneMatch[0] : '1';
+            let py = p.replace(/[0-5]/g, '').toLowerCase();
+            py = py.replace(/ü/g, 'v');
+
+            const exceptions = {
+                'zhi': 'zh', 'chi': 'ch', 'shi': 'sh', 'ri': 'r', 'zi': 'z', 'ci': 'c', 'si': 's',
+                'ju': 'jv', 'qu': 'qv', 'xu': 'xv', 'jue': 'jve', 'que': 'qve', 'xue': 'xve',
+                'juan': 'jvan', 'quan': 'qvan', 'xuan': 'xvan', 'jun': 'jvn', 'qun': 'qvn', 'xun': 'xvn',
+                'yu': 'v', 'yue': 've', 'yuan': 'van', 'yun': 'vn',
+                'y': 'i', 'yi': 'i', 'ya': 'ia', 'ye': 'ie', 'yao': 'iao', 'you': 'iou', 'yan': 'ian', 'yin': 'in', 'yang': 'iang', 'ying': 'ing', 'yong': 'iong',
+                'w': 'u', 'wu': 'u', 'wa': 'ua', 'wo': 'uo', 'wai': 'uai', 'wei': 'uei', 'wan': 'uan', 'wen': 'uen', 'wang': 'uang', 'weng': 'ueng',
+                'hui': 'huei', 'liu': 'liou', 'jiu': 'jiou', 'diu': 'diou', 'xiu': 'xiou', 'qiu': 'qiou', 'miu': 'miou', 'niu': 'niou',
+                'dui': 'duei', 'tui': 'tuei', 'gui': 'guei', 'kui': 'kuei', 'zui': 'zuei', 'cui': 'cuei', 'sui': 'suei', 'zhui': 'zhuei', 'chui': 'chuei', 'shui': 'shuei', 'rui': 'ruei',
+                'dun': 'duen', 'tun': 'tuen', 'lun': 'luen', 'gun': 'guen', 'kun': 'kuen', 'hun': 'huen', 'zun': 'zuen', 'cun': 'cuen', 'sun': 'suen', 'zhun': 'zhuen', 'chun': 'chuen', 'shun': 'shuen', 'run': 'ruen',
+                'lue': 'lve', 'nue': 'nve'
+            };
+
+            if (exceptions[py]) py = exceptions[py];
+
+            const initials = {'b':'ㄅ','p':'ㄆ','m':'ㄇ','f':'ㄈ','d':'ㄉ','t':'ㄊ','n':'ㄋ','l':'ㄌ','g':'ㄍ','k':'ㄎ','h':'ㄏ','j':'ㄐ','q':'ㄑ','x':'ㄒ','zh':'ㄓ','ch':'ㄔ','sh':'ㄕ','r':'ㄖ','z':'ㄗ','c':'ㄘ','s':'ㄙ'};
+            const finals = {'a':'ㄚ','o':'ㄛ','e':'ㄜ','ai':'ㄞ','ei':'ㄟ','ao':'ㄠ','ou':'ㄡ','an':'ㄢ','en':'ㄣ','ang':'ㄤ','eng':'ㄥ','er':'ㄦ','i':'ㄧ','u':'ㄨ','v':'ㄩ','ia':'ㄧㄚ','io':'ㄧㄛ','ie':'ㄧㄝ','iai':'ㄧㄞ','iao':'ㄧㄠ','iou':'ㄧㄡ','ian':'ㄧㄢ','in':'ㄧㄣ','iang':'ㄧㄤ','ing':'ㄧㄥ','iong':'ㄩㄥ','ua':'ㄨㄚ','uo':'ㄨㄛ','uai':'ㄨㄞ','uei':'ㄨㄟ','uan':'ㄨㄢ','uen':'ㄨㄣ','uang':'ㄨㄤ','ueng':'ㄨㄥ','ve':'ㄩㄝ','van':'ㄩㄢ','vn':'ㄩㄣ', 'ong': 'ㄨㄥ'};
+
+            let result = '';
+            for (let init of ['zh', 'ch', 'sh', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's']) {
+                if (py.startsWith(init)) {
+                    result += initials[init];
+                    py = py.substring(init.length);
+                    break;
+                }
+            }
+            
+            if (py.length > 0) result += finals[py] ? finals[py] : py;
+            
+            if (tone === '0' || tone === '5') {
+                result = '˙' + result;
+            } else {
+                result += toneMap[tone];
+            }
+            return result;
+        }
+
+        // --- 正常注音產生器 ---
+        function formatZhuyinHTML(text) {
+            if (!text) return '';
+            let tone = '';
+            let symbols = text.trim();
+            
+            const toneMatch = symbols.match(/[˙ˊˇˋ]/);
+            if (toneMatch) {
+                tone = toneMatch[0];
+                symbols = symbols.replace(tone, '');
+            }
+
+            let symbolsHTML = `<div class="zy-symbols">${symbols.split('').join('<br>')}</div>`;
+
+            if (tone === '˙') {
+                return `<div class="zy-wrapper-light"><div class="zy-tone-top">˙</div>${symbolsHTML}</div>`;
+            } else if (tone) {
+                return `<div class="zy-wrapper">${symbolsHTML}<div class="zy-tone-right">${tone}</div></div>`;
+            }
+            return `<div class="zy-wrapper">${symbolsHTML}</div>`;
+        }
+
+        // --- 描寫用(淺灰色)注音產生器 ---
+        function formatTracingZhuyinHTML(text) {
+            if (!text) return '';
+            let tone = '';
+            let symbols = text.trim();
+            
+            const toneMatch = symbols.match(/[˙ˊˇˋ]/);
+            if (toneMatch) {
+                tone = toneMatch[0];
+                symbols = symbols.replace(tone, '');
+            }
+
+            let symbolsHTML = `<div class="zy-symbols-tracing">${symbols.split('').join('<br>')}</div>`;
+
+            if (tone === '˙') {
+                return `<div class="zy-wrapper-light-tracing"><div class="zy-tone-top-tracing">˙</div>${symbolsHTML}</div>`;
+            } else if (tone) {
+                return `<div class="zy-wrapper-tracing">${symbolsHTML}<div class="zy-tone-right-tracing">${tone}</div></div>`;
+            }
+            return `<div class="zy-wrapper-tracing">${symbolsHTML}</div>`;
+        }
+
+        async function processInput() {
+            const inputStr = document.getElementById('charInput').value.replace(/\s+/g, '');
+            if (!inputStr) return;
+
+            currentChars = inputStr.split('');
+            
+            // 載入注音
+            currentChars.forEach(char => {
+                if (!zhuyinData[char]) {
+                    if (customDict[char]) {
+                        zhuyinData[char] = customDict[char];
+                    } else if (window.pinyinPro) {
+                        let py = window.pinyinPro.pinyin(char, { toneType: 'num', type: 'string' });
+                        zhuyinData[char] = pinyinToZhuyin(py.trim()); 
+                    } else {
+                        zhuyinData[char] = ''; 
+                    }
+                }
+            });
+
+            renderZhuyinEditor();
+            await renderAllPages();
+        }
+
+        function renderZhuyinEditor() {
+            const editorDiv = document.getElementById('zhuyin-editor');
+            editorDiv.innerHTML = '<div style="width: 100%; margin-bottom: 10px; font-weight: bold; color: #555;">確認與修改注音 (有錯可直接改)：</div>';
+            editorDiv.style.display = 'flex';
+
+            currentChars.forEach((char, index) => {
+                const item = document.createElement('div');
+                item.className = 'zhuyin-item';
+                
+                const label = document.createElement('label');
+                label.textContent = char;
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = zhuyinData[char];
+                
+                input.addEventListener('input', (e) => {
+                    zhuyinData[char] = e.target.value;
+                    // 同時更新普通注音與描寫注音
+                    const displayElements = document.querySelectorAll(`.zy-display-${index}`);
+                    displayElements.forEach(el => {
+                        el.innerHTML = formatZhuyinHTML(e.target.value);
+                    });
+                    const tracingElements = document.querySelectorAll(`.zy-tracing-display-${index}`);
+                    tracingElements.forEach(el => {
+                        el.innerHTML = formatTracingZhuyinHTML(e.target.value);
+                    });
+                });
+
+                item.appendChild(label);
+                item.appendChild(input);
+                editorDiv.appendChild(item);
+            });
+        }
+
+        async function renderAllPages() {
+            const container = document.getElementById('pages-container');
+            container.innerHTML = '';
+            const charsPerPage = parseInt(document.getElementById('charsPerPage').value);
+            const tracingCount = parseInt(document.getElementById('tracingCount').value); // 取得選擇的描寫格數
+            
+            const chunks = [];
+            for (let i = 0; i < currentChars.length; i += charsPerPage) {
+                let chunk = currentChars.slice(i, i + charsPerPage);
+                while (chunk.length < charsPerPage) { chunk.push(''); }
+                chunks.push(chunk);
+            }
+
+            let globalCharIndex = 0;
+
+            for (let pageIndex = 0; pageIndex < chunks.length; pageIndex++) {
+                const chunk = chunks[pageIndex];
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'page';
+                
+                const table = document.createElement('table');
+                table.className = 'practice-table';
+                
+                const rowWord = document.createElement('tr');
+                const rowStrokes = document.createElement('tr');
+                const rowPractice = document.createElement('tr');
+
+                rowWord.innerHTML = '<td class="label-col">生字</td>';
+                rowStrokes.innerHTML = '<td class="label-col">筆順</td>';
+                rowPractice.innerHTML = '<td class="label-col">生字練習</td>';
+
+                table.appendChild(rowWord);
+                table.appendChild(rowStrokes);
+                table.appendChild(rowPractice);
+                pageDiv.appendChild(table);
+                container.appendChild(pageDiv);
+
+                for (let i = 0; i < chunk.length; i++) {
+                    const char = chunk[i];
+                    const charIndex = globalCharIndex++;
+
+                    const tdWord = document.createElement('td');
+                    tdWord.className = 'word-td';
+                    const tdStrokes = document.createElement('td');
+                    tdStrokes.className = 'stroke-td';
+                    const tdPractice = document.createElement('td');
+                    tdPractice.className = 'practice-td';
+
+                    if (char === '') {
+                        rowWord.appendChild(tdWord);
+                        rowStrokes.appendChild(tdStrokes);
+                        rowPractice.appendChild(tdPractice);
+                        continue;
+                    }
+
+                    const zyHTML = formatZhuyinHTML(zhuyinData[char]);
+                    tdWord.innerHTML = `
+                        <div class="char-zhuyin-container">
+                            <div class="char-main">${char}</div>
+                            <div class="zhuyin-main zy-display-${charIndex}">${zyHTML}</div>
+                        </div>
+                    `;
+                    rowWord.appendChild(tdWord);
+
+                    const strokeContainer = document.createElement('div');
+                    strokeContainer.className = 'stroke-container';
+                    tdStrokes.appendChild(strokeContainer);
+                    rowStrokes.appendChild(tdStrokes);
+
+                    const practiceContainer = document.createElement('div');
+                    practiceContainer.className = 'practice-container';
+                    tdPractice.appendChild(practiceContainer);
+                    rowPractice.appendChild(tdPractice);
+
+                    try {
+                        const charData = await HanziWriter.loadCharacterData(char);
+                        
+                        charData.strokes.forEach((stroke, idx) => {
+                            const box = document.createElement('div');
+                            box.className = 'grid-box small';
+                            box.innerHTML = '<div class="grid-bg"></div>';
+                            
+                            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                            svg.classList.add('raw-svg');
+                            svg.setAttribute('viewBox', '0 0 1024 1024');
+                            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                            g.setAttribute('transform', 'scale(1, -1) translate(0, -900)');
+
+                            for (let k = 0; k <= idx; k++) {
+                                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                path.setAttribute('d', charData.strokes[k]);
+                                path.setAttribute('fill', k === idx ? '#E53935' : '#000000'); 
+                                g.appendChild(path);
+                            }
+                            svg.appendChild(g);
+                            box.appendChild(svg);
+                            strokeContainer.appendChild(box);
+                        });
+
+                        // 依據選擇的描寫格數產生
+                        for (let p = 0; p < 6; p++) {
+                            const pUnit = document.createElement('div');
+                            pUnit.className = 'practice-unit';
+                            
+                            const pBox = document.createElement('div');
+                            pBox.className = 'grid-box';
+                            pBox.innerHTML = '<div class="grid-bg"></div>';
+                            
+                            const zyBox = document.createElement('div');
+                            zyBox.className = 'grid-zhuyin';
+                            
+                            // 若此格為「描寫格」
+                            if (p < tracingCount) {
+                                // 加入淺灰色注音
+                                zyBox.innerHTML = formatTracingZhuyinHTML(zhuyinData[char]);
+                                zyBox.classList.add(`zy-tracing-display-${charIndex}`);
+                            }
+
+                            pUnit.appendChild(pBox);
+                            pUnit.appendChild(zyBox);
+                            practiceContainer.appendChild(pUnit);
+                            
+                            // 若此格為「描寫格」，則生成描寫漢字
+                            if (p < tracingCount) {
+                                HanziWriter.create(pBox, char, {
+                                    width: 66, height: 66,   
+                                    padding: 2,              
+                                    strokeColor: '#CCCCCC', 
+                                    showOutline: false
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        for (let p = 0; p < 6; p++) {
+                            const pUnit = document.createElement('div');
+                            pUnit.className = 'practice-unit';
+                            const pBox = document.createElement('div');
+                            pBox.className = 'grid-box';
+                            pBox.innerHTML = '<div class="grid-bg"></div>';
+                            const zyBox = document.createElement('div');
+                            zyBox.className = 'grid-zhuyin';
+                            
+                            if (p < tracingCount) {
+                                zyBox.innerHTML = formatTracingZhuyinHTML(zhuyinData[char]);
+                                zyBox.classList.add(`zy-tracing-display-${charIndex}`);
+                            }
+                            
+                            pUnit.appendChild(pBox);
+                            pUnit.appendChild(zyBox);
+                            practiceContainer.appendChild(pUnit);
+                        }
+                    }
+                }
+            }
+        }
+        
+        window.onload = function() {
+            processInput();
+        }
+    </script>
+</body>
+</html>
